@@ -3,42 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Halodoc Academy - Firebase Debug</title>
+    <title>Halodoc Academy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; background-color: #f3f4f6; }
-        .container { background-color: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
-        .success { color: #16a34a; }
-        .error { color: #dc2626; }
-        pre { background-color: #e5e7eb; padding: 1rem; border-radius: 0.25rem; text-align: left; white-space: pre-wrap; word-break: break-all; }
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Firebase Connection Test</h1>
-        <p>Attempting to connect to Firebase and sign in...</p>
-        <div id="status"></div>
-        <pre id="log"></pre>
-    </div>
+<body class="bg-gray-100">
+    <div id="root"></div>
 
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, increment, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
         
-        const statusDiv = document.getElementById('status');
-        const logDiv = document.getElementById('log');
+        window.firebase = {
+            initializeApp,
+            getAuth, signInAnonymously, onAuthStateChanged,
+            getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, increment, writeBatch, getDocs
+        };
+    </script>
+    
+    <!-- React Application -->
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { 
+            initializeApp, getAuth, signInAnonymously, onAuthStateChanged,
+            getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, increment, writeBatch, getDocs
+        } = window.firebase;
 
-        function logMessage(message, isError = false) {
-            console.log(message);
-            const p = document.createElement('p');
-            p.textContent = typeof message === 'object' ? JSON.stringify(message, null, 2) : message;
-            if (isError) {
-                p.classList.add('error');
-            }
-            logDiv.appendChild(p);
-        }
+        // --- Icon Components (using inline SVG) ---
+        const Icon = ({ children, className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>;
+        const Award = ({className}) => <Icon className={className}><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 17 17 23 15.79 13.88"></polyline></Icon>;
+        const BookOpen = ({className}) => <Icon className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></Icon>;
+        const MessageSquare = ({className}) => <Icon className={className}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></Icon>;
+        const Stethoscope = ({className}) => <Icon className={className}><path d="M4.8 2.3A.3.3 0 1 0 5.4 2a2.4 2.4 0 0 1 3.2 0H16a6 6 0 0 1 6 6v3a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2V9a4 4 0 0 0-4-4h-.5a2.4 2.4 0 0 1-3.2 0A.3.3 0 1 0 4.8 2.3Z"></path><path d="M8 15v1a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-1a2 2 0 1 0-8 0Z"></path><path d="M9 13H4a2 2 0 0 0-2 2v2"></path></Icon>;
+        const User = ({className}) => <Icon className={className}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></Icon>;
+        const PlusCircle = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></Icon>;
+        const BrainCircuit = ({className}) => <Icon className={className}><path d="M12 2a2.5 2.5 0 0 1 3 4.5v0a3.5 3.5 0 0 1 4.2 6.3c.2.5.3 1.2.3 2.2a4 4 0 0 1-8 0c0-1 .1-1.7.3-2.2a3.5 3.5 0 0 1 4.2-6.3v0a2.5 2.5 0 0 1 3-4.5Z"></path><path d="M19.5 12c.3-1 .4-2.2.4-3.5a4.5 4.5 0 0 0-8.2-2.3"></path><path d="M4.5 12c-.3-1-.4-2.2-.4-3.5A4.5 4.5 0 0 1 8.3 6.2"></path><path d="M12 15.5a2.5 2.5 0 0 1 3 4.5v0a3.5 3.5 0 0 1 4.2 6.3c.2.5.3 1.2.3 2.2a4 4 0 0 1-8 0c0-1 .1-1.7.3-2.2a3.5 3.5 0 0 1 4.2-6.3v0a2.5 2.5 0 0 1 3-4.5Z"></path></Icon>;
+        const FileText = ({className}) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></Icon>;
+        const ExternalLink = ({className}) => <Icon className={className}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></Icon>;
+        const Star = ({className}) => <Icon className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></Icon>;
+        const ChevronLeft = ({className}) => <Icon className={className}><polyline points="15 18 9 12 15 6"></polyline></Icon>;
+        const LogOut = ({className}) => <Icon className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></Icon>;
+        const Calendar = ({className}) => <Icon className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></Icon>;
 
-        // --- PASTE YOUR FIREBASE CONFIG HERE ---
+        // --- Firebase Configuration and Initialization ---
         const firebaseConfig = {
            apiKey: "AIzaSyARWTTU-w2QK6sn7SWBef2WFWPUM1SV-UI",
            authDomain: "halodoc-academy-app.firebaseapp.com",
@@ -48,37 +65,284 @@
            appId: "1:366488602096:web:7b5b5b7893885c36ee4935",
            measurementId: "G-LJMRSDP7FG"
         };
-        // -----------------------------------------
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        try {
-            logMessage("Initializing Firebase...");
-            const app = initializeApp(firebaseConfig);
-            logMessage("Firebase App Initialized Successfully.");
+        // --- Admin Configuration ---
+        const ADMIN_UID = "18076815954052619302";
+        
+        function App() {
+            const [user, setUser] = useState(null);
+            const [userData, setUserData] = useState(null);
+            const [isLoading, setIsLoading] = useState(true);
+            const [currentPage, setCurrentPage] = useState('feed');
+            const [authError, setAuthError] = useState(null);
 
-            const auth = getAuth(app);
-            logMessage("Firebase Auth Initialized Successfully.");
+            useEffect(() => {
+                const signInAndSetup = async () => {
+                    try {
+                        await signInAnonymously(auth);
+                    } catch (error) {
+                         if (error.code === 'auth/requests-from-referer-blocked' || error.message.includes('auth/requests-from-referer')) {
+                            const domain = new URL(window.location.href).hostname;
+                             setAuthError(`FIREBASE SETUP ERROR: The current website (${domain}) is not authorized. Please go to your Firebase project's "Authentication" -> "Settings" -> "Authorized domains" and add this domain.`);
+                        } else {
+                            setAuthError(`An unexpected authentication error occurred: ${error.message}`);
+                        }
+                        console.error("Authentication error:", error);
+                        setIsLoading(false);
+                    }
+                };
 
-            logMessage("Attempting to sign in anonymously...");
-            signInAnonymously(auth)
-                .then((userCredential) => {
-                    logMessage("Anonymous Sign-In Successful!");
-                    const user = userCredential.user;
-                    statusDiv.innerHTML = `<h2 class="success">SUCCESS! Connected to Firebase.</h2>`;
-                    logMessage("User object:");
-                    logMessage(user);
-                })
-                .catch((error) => {
-                    logMessage("Anonymous Sign-In FAILED.", true);
-                    statusDiv.innerHTML = `<h2 class="error">ERROR! Could not sign in.</h2>`;
-                    logMessage(error.code, true);
-                    logMessage(error.message, true);
+                const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+                    if (firebaseUser) {
+                        setUser(firebaseUser);
+                        const userDocRef = doc(db, "users", firebaseUser.uid);
+                        const userDocSnap = await getDoc(userDocRef);
+                        if (userDocSnap.exists()) {
+                            const profileData = userDocSnap.data();
+                            profileData.isAdmin = firebaseUser.uid === ADMIN_UID;
+                            setUserData(profileData);
+                        } else {
+                            setUserData(null);
+                        }
+                        setIsLoading(false);
+                    } else {
+                        // This case handles logout
+                        setUser(null);
+                        setUserData(null);
+                         // If not loading and no user, we might need to re-trigger sign-in
+                        if (!isLoading) {
+                            signInAndSetup();
+                        }
+                    }
                 });
+                
+                signInAndSetup();
 
-        } catch (error) {
-            logMessage("A critical error occurred during initialization.", true);
-            statusDiv.innerHTML = `<h2 class="error">CRITICAL ERROR! Check your firebaseConfig object.</h2>`;
-            logMessage(error.message, true);
+                return () => unsubscribe();
+            }, []);
+
+            if (authError) {
+                return <AuthErrorScreen message={authError} />;
+            }
+
+            if (isLoading) {
+                return <LoadingScreen />;
+            }
+
+            if (user && !userData) {
+                return <ProfileSetupScreen user={user} onProfileCreated={setUserData} />;
+            }
+            
+            if (user && userData) {
+                return (
+                    <div className="container mx-auto max-w-4xl">
+                        <Header user={user} userData={userData} />
+                        <main className="p-4 pb-24">
+                            {currentPage === 'feed' && <Feed user={user} userData={userData} />}
+                            {currentPage === 'discussions' && <Discussions user={user} userData={userData} />}
+                            {currentPage === 'leaderboard' && <Leaderboard />}
+                            {currentPage === 'profile' && <Profile user={user} userData={userData} />}
+                        </main>
+                        <NavBar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+                    </div>
+                );
+            }
+            
+            return <LoadingScreen message="Verifying connection..."/>;
         }
+        
+        function AuthErrorScreen({ message }) {
+            return (
+                <div className="flex items-center justify-center min-h-screen p-4">
+                    <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-8 border-4 border-red-500">
+                        <div className="text-center">
+                            <h1 className="text-2xl font-bold text-red-700">Connection Blocked</h1>
+                            <p className="mt-4 text-gray-700">Your Firebase project is blocking requests from this website. You need to authorize it.</p>
+                            <div className="mt-6 p-4 bg-gray-100 rounded-lg text-left">
+                                <p className="font-semibold">Follow these steps:</p>
+                                <ol className="list-decimal list-inside mt-2 space-y-1">
+                                    <li>Go to your Firebase project console.</li>
+                                    <li>Navigate to **Build > Authentication > Settings**.</li>
+                                    <li>Click on the **"Authorized domains"** tab.</li>
+                                    <li>Click **"Add domain"** and enter the domain shown below.</li>
+                                </ol>
+                                <p className="mt-4 font-bold text-center bg-yellow-100 text-yellow-800 p-2 rounded break-all">{new URL(window.location.href).hostname}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function LoadingScreen({ message = "Connecting to Halodoc Academy..." }) {
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen">
+                    <Stethoscope className="w-16 h-16 text-red-500 animate-pulse" />
+                    <h1 className="mt-4 text-xl font-semibold text-red-700">{message}</h1>
+                </div>
+            );
+        }
+
+        function ProfileSetupScreen({ user, onProfileCreated }) {
+            const [displayName, setDisplayName] = useState('');
+            const [profession, setProfession] = useState('');
+            const [error, setError] = useState('');
+            const [isSaving, setIsSaving] = useState(false);
+            const professions = ["Doctor", "Nurse", "Pharmacist", "Midwife", "Lab Technician", "Other"];
+
+            const handleSetup = async () => {
+                if (!displayName.trim() || !profession) {
+                    setError("Please provide your name and select a profession.");
+                    return;
+                }
+                setIsSaving(true);
+                setError('');
+                const userProfile = {
+                    uid: user.uid, displayName, profession, points: 0, createdAt: serverTimestamp(), isAdmin: user.uid === ADMIN_UID
+                };
+                try {
+                    await setDoc(doc(db, "users", user.uid), userProfile);
+                    onProfileCreated(userProfile);
+                } catch (err) {
+                    console.error("Error creating profile:", err);
+                    setError("Could not save profile. Please try again.");
+                    setIsSaving(false);
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+                        <div className="text-center mb-6">
+                            <BrainCircuit className="w-12 h-12 mx-auto text-red-500" />
+                            <h1 className="text-2xl font-bold text-gray-800 mt-2">Welcome to Halodoc Academy</h1>
+                            <p className="text-gray-500">Let's set up your professional profile.</p>
+                        </div>
+                        {error && <p className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</p>}
+                        <div className="space-y-6">
+                            <div>
+                                <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                <input id="displayName" type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g. Dr. Budi Santoso" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" />
+                            </div>
+                            <div>
+                                <label htmlFor="profession" className="block text-sm font-medium text-gray-700 mb-1">Profession</label>
+                                <select id="profession" value={profession} onChange={(e) => setProfession(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 bg-white">
+                                    <option value="" disabled>Select your profession...</option>
+                                    {professions.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="mt-8">
+                            <button onClick={handleSetup} disabled={isSaving} className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-red-300 transition-colors">
+                                {isSaving ? "Saving..." : "Join Academy"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function Header({ user, userData }) {
+            const [showNotifications, setShowNotifications] = useState(false);
+            const [notifications, setNotifications] = useState([]);
+
+            useEffect(() => {
+                if (!user) return;
+                const notifCollectionRef = collection(db, "users", user.uid, "notifications");
+                const q = query(notifCollectionRef);
+
+                const unsubscribe = onSnapshot(q, (querySnapshot) => {
+                    const notifsData = [];
+                    querySnapshot.forEach((doc) => notifsData.push({ id: doc.id, ...doc.data() }));
+                    notifsData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    setNotifications(notifsData);
+                });
+                return () => unsubscribe();
+            }, [user]);
+
+            return (
+                <header className="bg-white shadow-sm sticky top-0 z-20 p-4 flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                        <Stethoscope className="w-8 h-8 text-red-600" />
+                        <h1 className="text-xl font-bold text-gray-800">Halodoc Academy</h1>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full">
+                            <Award className="w-5 h-5" />
+                            <span className="font-semibold">{userData.points} Pts</span>
+                        </div>
+                        <div className="relative">
+                            <button onClick={() => setShowNotifications(!showNotifications)} className="relative text-gray-500 hover:text-red-600">
+                                <Bell className="w-6 h-6" />
+                                {notifications.length > 0 && notifications.some(n=>!n.read) && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span>}
+                            </button>
+                            {showNotifications && (
+                                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl overflow-hidden border">
+                                    <div className="p-3 font-bold text-lg border-b">Notifications</div>
+                                    <ul className="max-h-96 overflow-y-auto">
+                                        {notifications.length > 0 ? (
+                                            notifications.map(notif => (
+                                                <li key={notif.id} className="p-3 border-b hover:bg-gray-50">
+                                                    <p className="font-semibold text-gray-800">{notif.title}</p>
+                                                    <p className="text-sm text-gray-600">{notif.message}</p>
+                                                </li>
+                                            ))
+                                        ) : (
+                                            <li className="p-4 text-center text-gray-500">No new notifications.</li>
+                                        )}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </header>
+            );
+        }
+
+        function NavBar({ currentPage, setCurrentPage }) {
+            const navItems = [
+                { id: 'feed', label: 'Feed', icon: BookOpen }, { id: 'discussions', label: 'Discussions', icon: MessageSquare }, { id: 'leaderboard', label: 'Leaderboard', icon: Award }, { id: 'profile', label: 'Profile', icon: User },
+            ];
+            return (
+                <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-t-lg border-t border-gray-200 z-10">
+                    <div className="flex justify-around max-w-4xl mx-auto">
+                        {navItems.map(item => (
+                            <button key={item.id} onClick={() => setCurrentPage(item.id)} className={`flex flex-col items-center justify-center w-full pt-3 pb-2 text-sm font-medium transition-colors ${currentPage === item.id ? 'text-red-600' : 'text-gray-500 hover:text-red-500'}`}>
+                                <item.icon className={`w-6 h-6 mb-1`} />
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
+                </nav>
+            );
+        }
+
+        // --- All other components like Feed, Discussions, etc. would go here, updated with simplified paths ---
+        function Feed({ user, userData }) { return <div className="text-center p-8">The main feed will appear here.</div>; }
+        function Discussions({ user, userData }) { return <div className="text-center p-8">Discussions for {userData.profession}s will appear here.</div>; }
+        function Leaderboard() { return <div className="text-center p-8">Leaderboard will appear here.</div>; }
+        function Profile({ user, userData }) {
+            return (
+                <div className="pb-20">
+                    <h2 className="text-2xl font-bold mb-4">My Profile</h2>
+                    <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <User className="w-20 h-20 mx-auto text-gray-300 bg-gray-100 rounded-full p-2 mb-4" />
+                        <h3 className="text-2xl font-bold">{userData.displayName}</h3>
+                        <p className="text-gray-600">{userData.profession}</p>
+                        {userData.isAdmin && <p className="text-sm font-bold text-red-600 bg-red-100 rounded-full py-1 my-2">ADMINISTRATOR</p>}
+                        <div className="mt-4 flex items-center justify-center space-x-2 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full"><Award className="w-6 h-6" /><span className="text-xl font-bold">{userData.points} Points</span></div>
+                        <div className="mt-6 text-xs text-gray-400 break-all"><p className="font-semibold">User ID:</p><p className="font-mono">{user.uid}</p></div>
+                        <div className="mt-6 border-t pt-4"><button onClick={() => auth.signOut()} className="flex items-center justify-center w-full bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-red-600 transition-colors"><LogOut className="w-5 h-5 mr-2" /> Logout</button></div>
+                    </div>
+                </div>
+            );
+        }
+
+
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
