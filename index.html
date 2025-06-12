@@ -21,21 +21,21 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, increment, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
         
         window.firebase = {
             initializeApp,
-            getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken,
+            getAuth, signInAnonymously, onAuthStateChanged,
             getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, increment, writeBatch, getDocs
         };
     </script>
     
     <!-- React Application -->
     <script type="text/babel">
-        const { useState, useEffect, useCallback } = React;
+        const { useState, useEffect } = React;
         const { 
-            initializeApp, getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken,
+            initializeApp, getAuth, signInAnonymously, onAuthStateChanged,
             getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, increment, writeBatch, getDocs
         } = window.firebase;
 
@@ -63,26 +63,19 @@
            projectId: "halodoc-academy-app",
            storageBucket: "halodoc-academy-app.firebasestorage.app",
            messagingSenderId: "366488602096",
-           appId: "1:366488602096:web:7b5b5b7893885c36ee4935",
+           appId: "1:366488602096:web:7b5b5b7893885c36ee4935"
            measurementId: "G-LJMRSDP7FG"
         };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        
+        // Use your project ID as the App ID for database paths
+        const appId = firebaseConfig.projectId || 'hda-app';
 
         // --- Admin Configuration ---
         const ADMIN_UID = "18076815954052619302";
         
-        // --- Reminder Logic and other functions... ---
-        // (The rest of the JS code from the previous immersive artifact goes here)
-        
-        function App() {
-            // ... The entire App component logic ...
-        }
-
-        // --- The rest of the components (LoadingScreen, ProfileSetupScreen, etc.) go here... ---
-        
-        // Main App Component (condensed for brevity, the full code is identical to previous version)
         function App() {
             const [user, setUser] = useState(null);
             const [userData, setUserData] = useState(null);
@@ -94,7 +87,7 @@
                 const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
                     if (firebaseUser) {
                         setUser(firebaseUser);
-                        const userDocRef = doc(db, `users/${firebaseUser.uid}`);
+                        const userDocRef = doc(db, `/artifacts/${appId}/public/data/users/${firebaseUser.uid}`);
                         const userDocSnap = await getDoc(userDocRef);
                         if (userDocSnap.exists()) {
                             const profileData = userDocSnap.data();
@@ -168,7 +161,7 @@
                     uid: user.uid, displayName, profession, points: 0, createdAt: serverTimestamp(), isAdmin: user.uid === ADMIN_UID
                 };
                 try {
-                    await setDoc(doc(db, `users/${user.uid}`), userProfile);
+                    await setDoc(doc(db, `/artifacts/${appId}/public/data/users/${user.uid}`), userProfile);
                     onProfileCreated(userProfile);
                 } catch (err) {
                     console.error("Error creating profile:", err);
@@ -215,7 +208,7 @@
 
             useEffect(() => {
                 if (!user) return;
-                const notifCollectionRef = collection(db, `users/${user.uid}/notifications`);
+                const notifCollectionRef = collection(db, `/artifacts/${appId}/public/data/users/${user.uid}/notifications`);
                 const q = query(notifCollectionRef);
 
                 const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -304,7 +297,7 @@
             };
 
             useEffect(() => {
-                const q = query(collection(db, "posts"));
+                const q = query(collection(db, `/artifacts/${appId}/public/data/posts`));
                 const unsubscribe = onSnapshot(q, async (querySnapshot) => {
                     const postsData = [];
                     const eventPostIds = [mockPost.id];
@@ -319,7 +312,7 @@
                     if (eventPostIds.length > 0) {
                         const newRegistrations = {};
                         for (const postId of eventPostIds) {
-                            const regDocSnap = await getDoc(doc(db, `posts/${postId}/registrations/${user.uid}`));
+                            const regDocSnap = await getDoc(doc(db, `/artifacts/${appId}/public/data/posts/${postId}/registrations/${user.uid}`));
                             if (regDocSnap.exists()) newRegistrations[postId] = true;
                         }
                         setRegistrations(newRegistrations);
@@ -347,7 +340,6 @@
             );
         }
 
-        // All other components (Discussions, Profile, etc.) are the same...
         function PostCard({ post, user, isRegistered, setRegistrations }) {
             const POST_TYPES = { CME: { label: "CME Topic", icon: BookOpen }, CASE: { label: "Case Discussion", icon: FileText }, PUBLICATION: { label: "Publication", icon: BrainCircuit }, CME_EVENT: { label: "CME Event", icon: Calendar },};
             const postConfig = POST_TYPES[post.type] || {};
@@ -361,8 +353,8 @@
                 }
                 try {
                     const batch = writeBatch(db);
-                    batch.set(doc(db, `posts/${post.id}/registrations/${user.uid}`), { registeredAt: serverTimestamp(), reminderSent: false });
-                    batch.set(doc(collection(db, `users/${user.uid}/notifications`)), { title: "Registration Confirmed", message: `You are now registered for "${post.title}".`, createdAt: serverTimestamp(), });
+                    batch.set(doc(db, `/artifacts/${appId}/public/data/posts/${post.id}/registrations/${user.uid}`), { registeredAt: serverTimestamp(), reminderSent: false });
+                    batch.set(doc(collection(db, `/artifacts/${appId}/public/data/users/${user.uid}/notifications`)), { title: "Registration Confirmed", message: `You are now registered for "${post.title}".`, createdAt: serverTimestamp(), });
                     await batch.commit();
                     setRegistrations(prev => ({...prev, [post.id]: true}));
                 } catch (error) {
@@ -417,7 +409,6 @@
             );
         }
 
-        // --- All other components go here. For brevity, they are omitted but are the same as the full React version. ---
         function Discussions({ user, userData }) { return <div className="text-center p-8">Discussions for {userData.profession}s will appear here.</div>; }
         function Leaderboard() { return <div className="text-center p-8">Leaderboard will appear here.</div>; }
         function Profile({ user, userData }) {
@@ -428,6 +419,7 @@
                         <User className="w-20 h-20 mx-auto text-gray-300 bg-gray-100 rounded-full p-2 mb-4" />
                         <h3 className="text-2xl font-bold">{userData.displayName}</h3>
                         <p className="text-gray-600">{userData.profession}</p>
+                        {userData.isAdmin && <p className="text-sm font-bold text-red-600 bg-red-100 rounded-full py-1 my-2">ADMINISTRATOR</p>}
                         <div className="mt-4 flex items-center justify-center space-x-2 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full"><Award className="w-6 h-6" /><span className="text-xl font-bold">{userData.points} Points</span></div>
                         <div className="mt-6 text-xs text-gray-400 break-all"><p className="font-semibold">User ID:</p><p className="font-mono">{user.uid}</p></div>
                         <div className="mt-6 border-t pt-4"><button onClick={() => auth.signOut()} className="flex items-center justify-center w-full bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-red-600 transition-colors"><LogOut className="w-5 h-5 mr-2" /> Logout</button></div>
@@ -435,7 +427,96 @@
                 </div>
             );
         }
-        function CreatePostModal({ onClose }) { return <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"><div className="bg-white p-8 rounded-lg">Creating posts is available in the full app. <button onClick={onClose} className="mt-4 bg-red-500 text-white p-2 rounded">Close</button></div></div> }
+        function CreatePostModal({ user, userData, onClose, onPostCreated }) {
+            const [type, setType] = useState(userData.isAdmin ? 'CME_EVENT' : 'CME');
+            const [title, setTitle] = useState('');
+            const [link, setLink] = useState('');
+            const [content, setContent] = useState('');
+            const [eventDate, setEventDate] = useState('');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [error, setError] = useState('');
+
+            const handleSubmit = async () => {
+                if (!title.trim() || !content.trim()) { setError("Title and content/description are required."); return; }
+                if (type === 'CME_EVENT' && !eventDate) { setError("Event date is required for CME Events."); return; }
+                setIsSubmitting(true);
+                setError('');
+
+                const postData = {
+                    type, title, link: link.trim(), content, authorId: user.uid, authorName: userData.displayName, authorProfession: userData.profession, createdAt: serverTimestamp(),
+                    ...(type === 'CME_EVENT' && { eventDate }),
+                    ...(userData.isAdmin && { authorIsAdmin: true }),
+                };
+
+                try {
+                    const batch = writeBatch(db);
+                    const newPostRef = doc(collection(db, `/artifacts/${appId}/public/data/posts`));
+                    batch.set(newPostRef, postData);
+                    
+                    const POST_TYPES = { CME: { points: 5 }, CASE: { points: 10 }, PUBLICATION: { points: 20 }, CME_EVENT: { points: 0 } };
+                    const pointsToAward = POST_TYPES[type].points || 0;
+
+                    if (pointsToAward > 0) {
+                      const userDocRef = doc(db, `/artifacts/${appId}/public/data/users/${user.uid}`);
+                      batch.update(userDocRef, { points: increment(pointsToAward) });
+                    }
+                    await batch.commit();
+                    onPostCreated();
+                } catch (err) {
+                    console.error("Error creating post: ", err);
+                    setError("Failed to create post. Please try again.");
+                    setIsSubmitting(false);
+                } 
+            };
+            
+            const POST_TYPES_OPTIONS = { CME: { label: "CME Topic", points: 5 }, CASE: { label: "Case Discussion", points: 10 }, PUBLICATION: { label: "Publication", points: 20 }, CME_EVENT: { label: "CME Event", points: 0, adminOnly: true },};
+            const availablePostTypes = Object.keys(POST_TYPES_OPTIONS).filter(key => !POST_TYPES_OPTIONS[key].adminOnly || userData.isAdmin);
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+                        <div className="p-6">
+                            <h3 className="text-xl font-bold mb-4">Share with the Academy</h3>
+                            {error && <p className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</p>}
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Type of Share</label>
+                                    <select value={type} onChange={e => setType(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2">
+                                        {availablePostTypes.map(key => (
+                                            <option key={key} value={key}>{POST_TYPES_OPTIONS[key].label} {POST_TYPES_OPTIONS[key].points > 0 ? `(+${POST_TYPES_OPTIONS[key].points} pts)`: ''}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., New Hypertension Guidelines" className="w-full border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500"/>
+                                </div>
+                                {type === 'CME_EVENT' && (
+                                     <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Event Date</label>
+                                        <input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} className="w-full border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500"/>
+                                     </div>
+                                )}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{type === 'CME_EVENT' ? 'Event Description' : 'Content / Description'}</label>
+                                    <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Share key takeaways or questions..." rows="4" className="w-full border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500"></textarea>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{type === 'CME_EVENT' ? 'Kemenkes LMS Course Link' : 'Relevant Link (Optional)'}</label>
+                                    <input type="url" value={link} onChange={e => setLink(e.target.value)} placeholder={type === 'CME_EVENT' ? 'https://lms.kemkes.go.id/courses/...' : 'https://example.com/resource'} className="w-full border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3 rounded-b-xl">
+                            <button onClick={onClose} className="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Cancel</button>
+                            <button onClick={handleSubmit} disabled={isSubmitting} className="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 disabled:bg-red-400">
+                                {isSubmitting ? "Sharing..." : "Share Post"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
         function EmptyState({message}) { return <div className="text-center py-10 px-6 bg-gray-50 rounded-lg"><BrainCircuit className="mx-auto h-12 w-12 text-gray-400" /><h3 className="mt-2 text-sm font-medium text-gray-900">Nothing here yet</h3><p className="mt-1 text-sm text-gray-500">{message}</p></div> }
 
 
@@ -443,3 +524,4 @@
     </script>
 </body>
 </html>
+```
