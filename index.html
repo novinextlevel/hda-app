@@ -21,12 +21,12 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, increment, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
         
         window.firebase = {
             initializeApp,
-            getAuth, signInAnonymously, onAuthStateChanged, signOut,
+            getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword,
             getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, increment, writeBatch, getDocs
         };
     </script>
@@ -35,7 +35,7 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
         const { 
-            initializeApp, getAuth, signInAnonymously, onAuthStateChanged, signOut,
+            initializeApp, getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword,
             getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, increment, writeBatch, getDocs
         } = window.firebase;
 
@@ -76,7 +76,7 @@
         function App() {
             const [user, setUser] = useState(null);
             const [userData, setUserData] = useState(null);
-            const [isAuthReady, setIsAuthReady] = useState(false);
+            const [isLoading, setIsLoading] = useState(true);
             const [currentPage, setCurrentPage] = useState('feed');
             
             useEffect(() => {
@@ -91,17 +91,18 @@
                             setUserData(null);
                         }
                     } else {
-                        signInAnonymously(auth).catch(e => console.error("Sign in failed", e));
                         setUser(null);
                         setUserData(null);
                     }
-                    setIsAuthReady(true);
+                    setIsLoading(false);
                 });
                 return () => unsubscribe();
             }, []);
 
-            if (!isAuthReady) { return <LoadingScreen />; }
+            if (isLoading) { return <LoadingScreen />; }
+            if (!user) { return <AuthScreen />; }
             if (user && !userData) { return <ProfileSetupScreen user={user} onProfileCreated={setUserData} />; }
+
             if (user && userData) {
                 return (
                     <div className="container mx-auto max-w-4xl">
@@ -118,125 +119,102 @@
             }
             return <LoadingScreen message="Verifying connection..."/>;
         }
+
+        function AuthScreen() {
+            const [isLogin, setIsLogin] = useState(true);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setIsLoading(true);
+                setError('');
+                try {
+                    if (isLogin) {
+                        await signInWithEmailAndPassword(auth, email, password);
+                    } else {
+                        await createUserWithEmailAndPassword(auth, email, password);
+                    }
+                } catch (err) { setError(err.message); } 
+                finally { setIsLoading(false); }
+            };
+            return (<div className="min-h-screen flex items-center justify-center p-4"><div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8"><div className="text-center mb-6"><Stethoscope className="w-12 h-12 mx-auto text-red-500" /><h1 className="text-2xl font-bold text-gray-800 mt-2">Halodoc Academy</h1></div><h2 className="text-xl font-bold text-center mb-4">{isLogin ? 'Login' : 'Register'}</h2>{error && <p className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</p>}<form onSubmit={handleSubmit} className="space-y-4"><div><label className="block text-sm font-medium">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 rounded-lg border" required /></div><div><label className="block text-sm font-medium">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 rounded-lg border" required /></div><button type="submit" disabled={isLoading} className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 disabled:bg-red-300">{isLoading ? 'Loading...' : (isLogin ? 'Login' : 'Register')}</button></form><div className="mt-4 text-center"><button onClick={() => setIsLogin(!isLogin)} className="text-sm text-red-600 hover:underline">{isLogin ? 'Need an account? Register' : 'Already have an account? Login'}</button></div></div></div>);
+        }
         
         function LoadingScreen({ message = "Connecting to Halodoc Academy..." }) { return (<div className="flex flex-col items-center justify-center min-h-screen"><Stethoscope className="w-16 h-16 text-red-500 animate-pulse" /><h1 className="mt-4 text-xl font-semibold text-red-700">{message}</h1></div>); }
-
         function ProfileSetupScreen({ user, onProfileCreated }) {
             const [displayName, setDisplayName] = useState('');
             const [profession, setProfession] = useState('');
             const [error, setError] = useState('');
             const [isSaving, setIsSaving] = useState(false);
             const professions = ["Doctor", "Nurse", "Pharmacist", "Midwife", "Lab Technician", "Other"];
-
             const handleSetup = async () => {
                 if (!displayName.trim() || !profession) { setError("Please provide your name and select a profession."); return; }
                 setIsSaving(true);
                 const userProfile = { uid: user.uid, displayName, profession, points: 0, createdAt: serverTimestamp(), isAdmin: user.uid === ADMIN_UID };
-                try {
-                    await setDoc(doc(db, "users", user.uid), userProfile);
-                    onProfileCreated({ ...userProfile, isAdmin: user.uid === ADMIN_UID });
-                } catch (err) { console.error("Error creating profile:", err); setError("Could not save profile. Please try again."); setIsSaving(false); }
+                try { await setDoc(doc(db, "users", user.uid), userProfile); onProfileCreated({ ...userProfile, isAdmin: user.uid === ADMIN_UID }); } catch (err) { console.error("Error creating profile:", err); setError("Could not save profile. Please try again."); setIsSaving(false); }
             };
             return (<div className="min-h-screen flex items-center justify-center p-4"><div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8"><div className="text-center mb-6"><BrainCircuit className="w-12 h-12 mx-auto text-red-500" /><h1 className="text-2xl font-bold text-gray-800 mt-2">Welcome to Halodoc Academy</h1><p className="text-gray-500">Let's set up your professional profile.</p></div>{error && <p className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</p>}<div className="space-y-6"><div><label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label><input id="displayName" type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g. Dr. Budi Santoso" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" /></div><div><label htmlFor="profession" className="block text-sm font-medium text-gray-700 mb-1">Profession</label><select id="profession" value={profession} onChange={(e) => setProfession(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 bg-white"><option value="" disabled>Select your profession...</option>{professions.map(p => <option key={p} value={p}>{p}</option>)}</select></div></div><div className="mt-8"><button onClick={handleSetup} disabled={isSaving} className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-red-300 transition-colors">{isSaving ? "Saving..." : "Join Academy"}</button></div></div></div>);
         }
-        
         function Header({ user, userData }) {
             const [showNotifications, setShowNotifications] = useState(false);
             const [notifications, setNotifications] = useState([]);
-            useEffect(() => {
-                if (!user) return;
-                const q = query(collection(db, "users", user.uid, "notifications"));
-                const unsubscribe = onSnapshot(q, (querySnapshot) => {
-                    const notifsData = [];
-                    querySnapshot.forEach((doc) => notifsData.push({ id: doc.id, ...doc.data() }));
-                    notifsData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                    setNotifications(notifsData);
-                });
-                return () => unsubscribe();
-            }, [user]);
-
-            return (
-                <header className="bg-white shadow-sm sticky top-0 z-20 p-4 flex justify-between items-center">
-                    <div className="flex items-center space-x-3"><Stethoscope className="w-8 h-8 text-red-600" /><h1 className="text-xl font-bold text-gray-800">Halodoc Academy</h1></div>
-                    <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"><Award className="w-5 h-5" /><span className="font-semibold">{userData.points} Pts</span></div>
-                        <div className="relative">
-                            <button onClick={() => setShowNotifications(!showNotifications)} className="relative text-gray-500 hover:text-red-600">
-                                <Bell className="w-6 h-6" />
-                                {notifications.length > 0 && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span>}
-                            </button>
-                            {showNotifications && (<div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl overflow-hidden border"><div className="p-3 font-bold text-lg border-b">Notifications</div><ul className="max-h-96 overflow-y-auto">{notifications.length > 0 ? (notifications.map(notif => (<li key={notif.id} className="p-3 border-b hover:bg-gray-50"><p className="font-semibold text-gray-800">{notif.title}</p><p className="text-sm text-gray-600">{notif.message}</p></li>))) : (<li className="p-4 text-center text-gray-500">No new notifications.</li>)}</ul></div>)}
-                        </div>
-                    </div>
-                </header>
-            );
+            useEffect(() => { if (!user) return; const q = query(collection(db, "users", user.uid, "notifications")); const unsubscribe = onSnapshot(q, (querySnapshot) => { const notifsData = []; querySnapshot.forEach((doc) => notifsData.push({ id: doc.id, ...doc.data() })); notifsData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); setNotifications(notifsData); }); return () => unsubscribe(); }, [user]);
+            return (<header className="bg-white shadow-sm sticky top-0 z-20 p-4 flex justify-between items-center"><div className="flex items-center space-x-3"><Stethoscope className="w-8 h-8 text-red-600" /><h1 className="text-xl font-bold text-gray-800">Halodoc Academy</h1></div><div className="flex items-center space-x-4"><div className="flex items-center space-x-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"><Award className="w-5 h-5" /><span className="font-semibold">{userData.points} Pts</span></div><div className="relative"><button onClick={() => setShowNotifications(!showNotifications)} className="relative text-gray-500 hover:text-red-600"><Bell className="w-6 h-6" />{notifications.length > 0 && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span>}</button>{showNotifications && (<div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl overflow-hidden border"><div className="p-3 font-bold text-lg border-b">Notifications</div><ul className="max-h-96 overflow-y-auto">{notifications.length > 0 ? (notifications.map(notif => (<li key={notif.id} className="p-3 border-b hover:bg-gray-50"><p className="font-semibold text-gray-800">{notif.title}</p><p className="text-sm text-gray-600">{notif.message}</p></li>))) : (<li className="p-4 text-center text-gray-500">No new notifications.</li>)}</ul></div>)}</div></div></header>);
         }
-
         function NavBar({ currentPage, setCurrentPage }) { const navItems = [{ id: 'feed', label: 'Feed', icon: BookOpen }, { id: 'discussions', label: 'Discussions', icon: MessageSquare }, { id: 'leaderboard', label: 'Leaderboard', icon: Award }, { id: 'profile', label: 'Profile', icon: User },]; return (<nav className="fixed bottom-0 left-0 right-0 bg-white shadow-t-lg border-t border-gray-200 z-10"><div className="flex justify-around max-w-4xl mx-auto">{navItems.map(item => (<button key={item.id} onClick={() => setCurrentPage(item.id)} className={`flex flex-col items-center justify-center w-full pt-3 pb-2 text-sm font-medium transition-colors ${currentPage === item.id ? 'text-red-600' : 'text-gray-500 hover:text-red-500'}`}><item.icon className={`w-6 h-6 mb-1`} />{item.label}</button>))}</div></nav>); }
-        
-        // --- Full Components Restored ---
-        const POST_TYPES = { CME: { label: "CME Topic", icon: BookOpen, points: 5 }, CASE: { label: "Case Discussion", icon: FileText, points: 10 }, PUBLICATION: { label: "Publication", icon: BrainCircuit, points: 20 }, CME_EVENT: { label: "CME Event", icon: Calendar, points: 0, adminOnly: true },};
+        const POST_TYPES = { CME: { label: "CME Topic", points: 5 }, CASE: { label: "Case Discussion", points: 10 }, PUBLICATION: { label: "Publication", icon: BrainCircuit, points: 20 }, CME_EVENT: { label: "CME Event", icon: Calendar, points: 0, adminOnly: true },};
         
         function Feed({ user, userData }) {
             const [posts, setPosts] = useState([]);
             const [isLoading, setIsLoading] = useState(true);
             const [showCreateModal, setShowCreateModal] = useState(false);
-            
-            useEffect(() => {
-                const q = query(collection(db, "posts"));
-                const unsubscribe = onSnapshot(q, (querySnapshot) => {
-                    const postsData = [];
-                    querySnapshot.forEach((doc) => postsData.push({ id: doc.id, ...doc.data() }));
-                    postsData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                    setPosts(postsData);
-                    setIsLoading(false);
-                });
-                return () => unsubscribe();
-            }, []);
-
-            return (
-                <div>
-                    <div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Activity Feed</h2><button onClick={() => setShowCreateModal(true)} className="flex items-center bg-red-600 text-white font-semibold py-2 px-4 rounded-full shadow hover:bg-red-700 transition-colors"><PlusCircle className="w-5 h-5 mr-2" /> Share</button></div>
-                    {isLoading && <p>Loading feed...</p>}
-                    {!isLoading && posts.length === 0 && <div className="text-center p-8 text-gray-500">No posts in the feed yet. Be the first to share!</div>}
-                    <div className="space-y-4">{posts.map(post => <PostCard key={post.id} post={post} user={user} />)}</div>
-                    {showCreateModal && <CreatePostModal user={user} userData={userData} onClose={() => setShowCreateModal(false)} />}
-                </div>
-            );
+            useEffect(() => { const q = query(collection(db, "posts")); const unsubscribe = onSnapshot(q, (querySnapshot) => { const postsData = []; querySnapshot.forEach((doc) => postsData.push({ id: doc.id, ...doc.data() })); postsData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); setPosts(postsData); setIsLoading(false); }, (err) => { console.error("Feed Error:", err); setIsLoading(false); }); return () => unsubscribe(); }, []);
+            return (<div><div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Activity Feed</h2><button onClick={() => setShowCreateModal(true)} className="flex items-center bg-red-600 text-white font-semibold py-2 px-4 rounded-full shadow hover:bg-red-700 transition-colors"><PlusCircle className="w-5 h-5 mr-2" /> Share</button></div>{isLoading && <p>Loading feed...</p>}{!isLoading && posts.length === 0 && <div className="text-center p-8 text-gray-500">No posts in the feed yet. Be the first to share!</div>}<div className="space-y-4">{posts.map(post => <PostCard key={post.id} post={post} user={user} />)}</div>{showCreateModal && <CreatePostModal user={user} userData={userData} onClose={() => setShowCreateModal(false)} />}</div>);
         }
-        
-        function PostCard({ post, user }) { /* ... Full PostCard logic ... */ 
-            return (
-                <div className="bg-white rounded-xl shadow-md overflow-hidden"><div className="p-5"><div className="flex items-start justify-between"><div><div className={`flex items-center text-sm font-semibold ${post.authorIsAdmin ? 'text-purple-600' : 'text-red-600'} mb-2`}><PostIcon postType={post.type} /><span>{POST_TYPES[post.type]?.label || 'Share'}</span>{post.authorIsAdmin && <span className="ml-2 text-xs bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">ADMIN</span>}</div><h4 className="text-lg font-bold text-gray-900">{post.title}</h4></div><div className="text-sm text-gray-400 whitespace-nowrap pl-2">{timeAgo(post.createdAt)}</div></div>{post.content && <p className="mt-2 text-gray-700">{post.content}</p>}{post.link && <a href={post.link} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center text-red-600 hover:text-red-800 font-semibold text-sm">View Resource <ExternalLink className="w-4 h-4 ml-1" /></a>}<div className="mt-4 pt-3 border-t border-gray-200"><p className="text-sm text-gray-500">Shared by <span className="font-semibold">{post.authorName}</span> ({post.authorProfession})</p></div></div></div>
-            );
-        }
-        const PostIcon = ({postType}) => { const IconComponent = POST_TYPES[postType]?.icon || BrainCircuit; return <IconComponent className="w-5 h-5 mr-2" />; }
-        const timeAgo = (timestamp) => { if (!timestamp) return 'just now'; const postDate = timestamp.toDate(); const seconds = Math.floor((new Date() - postDate) / 1000); let interval = seconds / 31536000; if (interval > 1) return Math.floor(interval) + "y ago"; interval = seconds / 86400; if (interval > 1) return Math.floor(interval) + "d ago"; interval = seconds / 3600; if (interval > 1) return Math.floor(interval) + "h ago"; interval = seconds / 60; if (interval > 1) return Math.floor(interval) + "m ago"; return "just now"; };
 
-        function CreatePostModal({ user, userData, onClose }) { /* ... Full CreatePostModal logic ... */ 
+        function PostCard({ post, user }) { 
+            const PostIcon = POST_TYPES[post.type]?.icon || BrainCircuit;
+            const timeAgo = (timestamp) => { if (!timestamp) return 'just now'; const postDate = timestamp.toDate(); const seconds = Math.floor((new Date() - postDate) / 1000); let interval = seconds / 31536000; if (interval > 1) return Math.floor(interval) + "y ago"; interval = seconds / 86400; if (interval > 1) return Math.floor(interval) + "d ago"; interval = seconds / 3600; if (interval > 1) return Math.floor(interval) + "h ago"; interval = seconds / 60; if (interval > 1) return Math.floor(interval) + "m ago"; return "just now"; };
+            return (<div className="bg-white rounded-xl shadow-md overflow-hidden"><div className="p-5"><div className="flex items-start justify-between"><div><div className={`flex items-center text-sm font-semibold ${post.authorIsAdmin ? 'text-purple-600' : 'text-red-600'} mb-2`}><PostIcon className="w-5 h-5 mr-2" /><span>{POST_TYPES[post.type]?.label || 'Share'}</span>{post.authorIsAdmin && <span className="ml-2 text-xs bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">ADMIN</span>}</div><h4 className="text-lg font-bold text-gray-900">{post.title}</h4></div><div className="text-sm text-gray-400 whitespace-nowrap pl-2">{timeAgo(post.createdAt)}</div></div>{post.content && <p className="mt-2 text-gray-700">{post.content}</p>}{post.type === "CME_EVENT" && post.skpPoints > 0 && <p className="font-bold text-red-600 mt-2">Worth: {post.skpPoints} SKP</p>}{post.link && <a href={post.link} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center text-red-600 hover:text-red-800 font-semibold text-sm">View Resource <ExternalLink className="w-4 h-4 ml-1" /></a>}<div className="mt-4 pt-3 border-t border-gray-200"><p className="text-sm text-gray-500">Shared by <span className="font-semibold">{post.authorName}</span> ({post.authorProfession})</p></div></div></div>);
+        }
+
+        function CreatePostModal({ user, userData, onClose }) {
             const [type, setType] = useState(userData.isAdmin ? 'CME_EVENT' : 'CME');
             const [title, setTitle] = useState('');
             const [link, setLink] = useState('');
             const [content, setContent] = useState('');
+            const [skpPoints, setSkpPoints] = useState(0);
             const [isSubmitting, setIsSubmitting] = useState(false);
             const availablePostTypes = Object.keys(POST_TYPES).filter(key => !POST_TYPES[key].adminOnly || userData.isAdmin);
-
             const handleSubmit = async () => {
                 if (!title.trim()) return;
                 setIsSubmitting(true);
                 const postData = { type, title, link, content, authorId: user.uid, authorName: userData.displayName, authorProfession: userData.profession, createdAt: serverTimestamp(), authorIsAdmin: userData.isAdmin };
-                await addDoc(collection(db, "posts"), postData);
-                const userDocRef = doc(db, "users", user.uid);
-                await updateDoc(userDocRef, { points: increment(POST_TYPES[type]?.points || 0) });
+                if (type === "CME_EVENT") {
+                    postData.skpPoints = Number(skpPoints);
+                }
+                try { await addDoc(collection(db, "posts"), postData); if(type !== "CME_EVENT") { const userDocRef = doc(db, "users", user.uid); await updateDoc(userDocRef, { points: increment(POST_TYPES[type]?.points || 0) }); } } catch (e) { console.error("Error posting:", e); }
                 setIsSubmitting(false);
                 onClose();
             };
-
-            return (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-xl shadow-2xl w-full max-w-lg"><div className="p-6"><h3 className="text-xl font-bold mb-4">Share with the Academy</h3><div className="space-y-4"><div><label className="block text-sm font-medium">Type</label><select value={type} onChange={e => setType(e.target.value)} className="w-full bg-gray-50 p-2 rounded-lg border">{availablePostTypes.map(key => (<option key={key} value={key}>{POST_TYPES[key].label} (+{POST_TYPES[key].points} pts)</option>))}</select></div><div><label className="block text-sm font-medium">Title</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded-lg border" /></div><div><label className="block text-sm font-medium">Description</label><textarea value={content} onChange={e => setContent(e.target.value)} rows="4" className="w-full p-2 rounded-lg border"></textarea></div><div><label className="block text-sm font-medium">Link</label><input type="url" value={link} onChange={e => setLink(e.target.value)} className="w-full p-2 rounded-lg border" /></div></div></div><div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3"><button onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg">Cancel</button><button onClick={handleSubmit} disabled={isSubmitting} className="bg-red-600 text-white px-4 py-2 rounded-lg disabled:bg-red-300">Share</button></div></div></div>);
+            return (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-xl shadow-2xl w-full max-w-lg"><div className="p-6"><h3 className="text-xl font-bold mb-4">Share with the Academy</h3><div className="space-y-4"><div><label className="block text-sm font-medium">Type</label><select value={type} onChange={e => setType(e.target.value)} className="w-full bg-gray-50 p-2 rounded-lg border">{availablePostTypes.map(key => (<option key={key} value={key}>{POST_TYPES[key].label} (+{POST_TYPES[key].points} pts)</option>))}</select></div><div><label className="block text-sm font-medium">Title</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded-lg border" /></div>{type === "CME_EVENT" && <div><label className="block text-sm font-medium">SKP Points</label><input type="number" value={skpPoints} onChange={e => setSkpPoints(e.target.value)} className="w-full p-2 rounded-lg border" /></div>}<div><label className="block text-sm font-medium">Description</label><textarea value={content} onChange={e => setContent(e.target.value)} rows="4" className="w-full p-2 rounded-lg border"></textarea></div><div><label className="block text-sm font-medium">Link</label><input type="url" value={link} onChange={e => setLink(e.target.value)} className="w-full p-2 rounded-lg border" /></div></div></div><div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3"><button onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg">Cancel</button><button onClick={handleSubmit} disabled={isSubmitting} className="bg-red-600 text-white px-4 py-2 rounded-lg disabled:bg-red-300">Share</button></div></div></div>);
         }
-
-        function Discussions() { /* ... Full Discussions logic ... */ return <div className="text-center p-8 text-gray-500">Discussions are not yet implemented in this version.</div>; }
-        function Leaderboard() { /* ... Full Leaderboard logic ... */  return <div className="text-center p-8 text-gray-500">Leaderboard is not yet implemented in this version.</div>; }
+        function Discussions({ user, userData }) {
+            const [topics, setTopics] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+            const [showCreateModal, setShowCreateModal] = useState(false);
+            useEffect(() => { const q = query(collection(db, "discussions"), where("professionGroup", "==", userData.profession)); const unsubscribe = onSnapshot(q, (querySnapshot) => { const topicsData = []; querySnapshot.forEach((doc) => topicsData.push({ id: doc.id, ...doc.data() })); topicsData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); setTopics(topicsData); setIsLoading(false); }, (err) => { console.error("Discussions Error:", err); setIsLoading(false); }); return () => unsubscribe(); }, [userData.profession]);
+            return (<div><div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Discussions for {userData.profession}s</h2><button onClick={() => setShowCreateModal(true)} className="flex items-center bg-red-600 text-white font-semibold py-2 px-4 rounded-full shadow hover:bg-red-700 transition-colors"><PlusCircle className="w-5 h-5 mr-2" /> Start Topic</button></div>{isLoading && <p>Loading discussions...</p>}{!isLoading && topics.length === 0 && <div className="text-center p-8 text-gray-500">No topics for your profession yet.</div>}<div className="space-y-3">{topics.map(topic => <div key={topic.id} className="bg-white p-4 rounded-lg shadow-sm cursor-pointer hover:shadow-md"><h3 className="font-bold text-lg">{topic.title}</h3><p className="text-sm text-gray-500">Started by {topic.authorName}</p></div>)}</div>{showCreateModal && <CreateDiscussionModal user={user} userData={userData} onClose={() => setShowCreateModal(false)} />}</div>);
+        }
+        function CreateDiscussionModal({user, userData, onClose}) {
+             const [title, setTitle] = useState('');
+             const [isSubmitting, setIsSubmitting] = useState(false);
+             const handleSubmit = async () => { if (!title.trim()) return; setIsSubmitting(true); const discussionData = { title, authorId: user.uid, authorName: userData.displayName, professionGroup: userData.profession, createdAt: serverTimestamp() }; await addDoc(collection(db, "discussions"), discussionData); await updateDoc(doc(db, "users", user.uid), { points: increment(3) }); setIsSubmitting(false); onClose(); };
+             return (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-xl shadow-2xl w-full max-w-lg"><div className="p-6"><h3 className="text-xl font-bold mb-4">Start a New Discussion</h3><div><label className="block text-sm font-medium">Title</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded-lg border" /></div></div><div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3"><button onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg">Cancel</button><button onClick={handleSubmit} disabled={isSubmitting} className="bg-red-600 text-white px-4 py-2 rounded-lg disabled:bg-red-300">Start Topic</button></div></div></div>);
+        }
+        function Leaderboard() { return <div className="text-center p-8 text-gray-500">Leaderboard will appear here.</div>; }
         function Profile({ user, userData }) { return (<div className="pb-20"><h2 className="text-2xl font-bold mb-4">My Profile</h2><div className="bg-white rounded-xl shadow-lg p-6 text-center"><User className="w-20 h-20 mx-auto text-gray-300 bg-gray-100 rounded-full p-2 mb-4" /><h3 className="text-2xl font-bold">{userData.displayName}</h3><p className="text-gray-600">{userData.profession}</p>{userData.isAdmin && <p className="text-sm font-bold text-red-600 bg-red-100 rounded-full py-1 my-2">ADMINISTRATOR</p>}<div className="mt-4 flex items-center justify-center space-x-2 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full"><Award className="w-6 h-6" /><span className="text-xl font-bold">{userData.points} Points</span></div><div className="mt-6 text-xs text-gray-400 break-all"><p className="font-semibold">User ID:</p><p className="font-mono">{user.uid}</p></div><div className="mt-6 border-t pt-4"><button onClick={() => signOut(auth)} className="flex items-center justify-center w-full bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-red-600 transition-colors"><LogOut className="w-5 h-5 mr-2" /> Logout</button></div></div></div>); }
 
         ReactDOM.render(<App />, document.getElementById('root'));
