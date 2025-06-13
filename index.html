@@ -55,6 +55,7 @@
         const LogOut = ({className}) => <Icon className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></Icon>;
         const Calendar = ({className}) => <Icon className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></Icon>;
         const Bell = ({className}) => <Icon className={className}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></Icon>;
+        const Users = ({className}) => <Icon className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></Icon>;
 
         // --- Firebase Configuration and Initialization ---
         const firebaseConfig = {
@@ -72,6 +73,7 @@
 
         // --- Admin Configuration ---
         const ADMIN_UID = "YtyygqKsn2dFn1LmiNJOS1TZYaJ3";
+        const PROFESSIONS = ["Doctor", "Nurse", "Pharmacist", "Midwife", "Lab Technician", "Other"];
         
         function App() {
             const [user, setUser] = useState(null);
@@ -130,13 +132,7 @@
                 e.preventDefault();
                 setIsLoading(true);
                 setError('');
-                try {
-                    if (isLogin) {
-                        await signInWithEmailAndPassword(auth, email, password);
-                    } else {
-                        await createUserWithEmailAndPassword(auth, email, password);
-                    }
-                } catch (err) { setError(err.message); } 
+                try { if (isLogin) { await signInWithEmailAndPassword(auth, email, password); } else { await createUserWithEmailAndPassword(auth, email, password); } } catch (err) { setError(err.message); } 
                 finally { setIsLoading(false); }
             };
             return (<div className="min-h-screen flex items-center justify-center p-4"><div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8"><div className="text-center mb-6"><Stethoscope className="w-12 h-12 mx-auto text-red-500" /><h1 className="text-2xl font-bold text-gray-800 mt-2">Halodoc Academy</h1></div><h2 className="text-xl font-bold text-center mb-4">{isLogin ? 'Login' : 'Register'}</h2>{error && <p className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</p>}<form onSubmit={handleSubmit} className="space-y-4"><div><label className="block text-sm font-medium">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 rounded-lg border" required /></div><div><label className="block text-sm font-medium">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 rounded-lg border" required /></div><button type="submit" disabled={isLoading} className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 disabled:bg-red-300">{isLoading ? 'Loading...' : (isLogin ? 'Login' : 'Register')}</button></form><div className="mt-4 text-center"><button onClick={() => setIsLogin(!isLogin)} className="text-sm text-red-600 hover:underline">{isLogin ? 'Need an account? Register' : 'Already have an account? Login'}</button></div></div></div>);
@@ -148,36 +144,112 @@
             const [profession, setProfession] = useState('');
             const [error, setError] = useState('');
             const [isSaving, setIsSaving] = useState(false);
-            const professions = ["Doctor", "Nurse", "Pharmacist", "Midwife", "Lab Technician", "Other"];
             const handleSetup = async () => {
                 if (!displayName.trim() || !profession) { setError("Please provide your name and select a profession."); return; }
                 setIsSaving(true);
                 const userProfile = { uid: user.uid, displayName, profession, points: 0, createdAt: serverTimestamp(), isAdmin: user.uid === ADMIN_UID };
                 try { await setDoc(doc(db, "users", user.uid), userProfile); onProfileCreated({ ...userProfile, isAdmin: user.uid === ADMIN_UID }); } catch (err) { console.error("Error creating profile:", err); setError("Could not save profile. Please try again."); setIsSaving(false); }
             };
-            return (<div className="min-h-screen flex items-center justify-center p-4"><div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8"><div className="text-center mb-6"><BrainCircuit className="w-12 h-12 mx-auto text-red-500" /><h1 className="text-2xl font-bold text-gray-800 mt-2">Welcome to Halodoc Academy</h1><p className="text-gray-500">Let's set up your professional profile.</p></div>{error && <p className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</p>}<div className="space-y-6"><div><label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label><input id="displayName" type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g. Dr. Budi Santoso" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" /></div><div><label htmlFor="profession" className="block text-sm font-medium text-gray-700 mb-1">Profession</label><select id="profession" value={profession} onChange={(e) => setProfession(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 bg-white"><option value="" disabled>Select your profession...</option>{professions.map(p => <option key={p} value={p}>{p}</option>)}</select></div></div><div className="mt-8"><button onClick={handleSetup} disabled={isSaving} className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-red-300 transition-colors">{isSaving ? "Saving..." : "Join Academy"}</button></div></div></div>);
+            return (<div className="min-h-screen flex items-center justify-center p-4"><div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8"><div className="text-center mb-6"><BrainCircuit className="w-12 h-12 mx-auto text-red-500" /><h1 className="text-2xl font-bold text-gray-800 mt-2">Welcome to Halodoc Academy</h1><p className="text-gray-500">Let's set up your professional profile.</p></div>{error && <p className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</p>}<div className="space-y-6"><div><label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label><input id="displayName" type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g. Dr. Budi Santoso" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" /></div><div><label htmlFor="profession" className="block text-sm font-medium text-gray-700 mb-1">Profession</label><select id="profession" value={profession} onChange={(e) => setProfession(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 bg-white"><option value="" disabled>Select your profession...</option>{PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div></div><div className="mt-8"><button onClick={handleSetup} disabled={isSaving} className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-red-300 transition-colors">{isSaving ? "Saving..." : "Join Academy"}</button></div></div></div>);
         }
         function Header({ user, userData }) {
-            const [showNotifications, setShowNotifications] = useState(false);
-            const [notifications, setNotifications] = useState([]);
-            useEffect(() => { if (!user) return; const q = query(collection(db, "users", user.uid, "notifications")); const unsubscribe = onSnapshot(q, (querySnapshot) => { const notifsData = []; querySnapshot.forEach((doc) => notifsData.push({ id: doc.id, ...doc.data() })); notifsData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); setNotifications(notifsData); }); return () => unsubscribe(); }, [user]);
-            return (<header className="bg-white shadow-sm sticky top-0 z-20 p-4 flex justify-between items-center"><div className="flex items-center space-x-3"><Stethoscope className="w-8 h-8 text-red-600" /><h1 className="text-xl font-bold text-gray-800">Halodoc Academy</h1></div><div className="flex items-center space-x-4"><div className="flex items-center space-x-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"><Award className="w-5 h-5" /><span className="font-semibold">{userData.points} Pts</span></div><div className="relative"><button onClick={() => setShowNotifications(!showNotifications)} className="relative text-gray-500 hover:text-red-600"><Bell className="w-6 h-6" />{notifications.length > 0 && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span>}</button>{showNotifications && (<div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl overflow-hidden border"><div className="p-3 font-bold text-lg border-b">Notifications</div><ul className="max-h-96 overflow-y-auto">{notifications.length > 0 ? (notifications.map(notif => (<li key={notif.id} className="p-3 border-b hover:bg-gray-50"><p className="font-semibold text-gray-800">{notif.title}</p><p className="text-sm text-gray-600">{notif.message}</p></li>))) : (<li className="p-4 text-center text-gray-500">No new notifications.</li>)}</ul></div>)}</div></div></header>);
+             return (<header className="bg-white shadow-sm sticky top-0 z-20 p-4 flex justify-between items-center"><div className="flex items-center space-x-3"><Stethoscope className="w-8 h-8 text-red-600" /><h1 className="text-xl font-bold text-gray-800">Halodoc Academy</h1></div><div className="flex items-center space-x-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"><Award className="w-5 h-5" /><span className="font-semibold">{userData.points} Pts</span></div></header>);
         }
         function NavBar({ currentPage, setCurrentPage }) { const navItems = [{ id: 'feed', label: 'Feed', icon: BookOpen }, { id: 'discussions', label: 'Discussions', icon: MessageSquare }, { id: 'leaderboard', label: 'Leaderboard', icon: Award }, { id: 'profile', label: 'Profile', icon: User },]; return (<nav className="fixed bottom-0 left-0 right-0 bg-white shadow-t-lg border-t border-gray-200 z-10"><div className="flex justify-around max-w-4xl mx-auto">{navItems.map(item => (<button key={item.id} onClick={() => setCurrentPage(item.id)} className={`flex flex-col items-center justify-center w-full pt-3 pb-2 text-sm font-medium transition-colors ${currentPage === item.id ? 'text-red-600' : 'text-gray-500 hover:text-red-500'}`}><item.icon className={`w-6 h-6 mb-1`} />{item.label}</button>))}</div></nav>); }
-        const POST_TYPES = { CME: { label: "CME Topic", points: 5 }, CASE: { label: "Case Discussion", points: 10 }, PUBLICATION: { label: "Publication", icon: BrainCircuit, points: 20 }, CME_EVENT: { label: "CME Event", icon: Calendar, points: 0, adminOnly: true },};
+        const POST_TYPES = { CME: { label: "CME Topic", points: 5 }, CASE: { label: "Case Discussion", points: 10 }, PUBLICATION: { label: "Publication", icon: BrainCircuit, points: 1 }, CME_EVENT: { label: "CME Event", icon: Calendar, points: 0, adminOnly: true },};
         
         function Feed({ user, userData }) {
             const [posts, setPosts] = useState([]);
             const [isLoading, setIsLoading] = useState(true);
             const [showCreateModal, setShowCreateModal] = useState(false);
             useEffect(() => { const q = query(collection(db, "posts")); const unsubscribe = onSnapshot(q, (querySnapshot) => { const postsData = []; querySnapshot.forEach((doc) => postsData.push({ id: doc.id, ...doc.data() })); postsData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); setPosts(postsData); setIsLoading(false); }, (err) => { console.error("Feed Error:", err); setIsLoading(false); }); return () => unsubscribe(); }, []);
-            return (<div><div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Activity Feed</h2><button onClick={() => setShowCreateModal(true)} className="flex items-center bg-red-600 text-white font-semibold py-2 px-4 rounded-full shadow hover:bg-red-700 transition-colors"><PlusCircle className="w-5 h-5 mr-2" /> Share</button></div>{isLoading && <p>Loading feed...</p>}{!isLoading && posts.length === 0 && <div className="text-center p-8 text-gray-500">No posts in the feed yet. Be the first to share!</div>}<div className="space-y-4">{posts.map(post => <PostCard key={post.id} post={post} user={user} />)}</div>{showCreateModal && <CreatePostModal user={user} userData={userData} onClose={() => setShowCreateModal(false)} />}</div>);
+            return (<div><div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Activity Feed</h2><button onClick={() => setShowCreateModal(true)} className="flex items-center bg-red-600 text-white font-semibold py-2 px-4 rounded-full shadow hover:bg-red-700 transition-colors"><PlusCircle className="w-5 h-5 mr-2" /> Share</button></div>{isLoading && <p>Loading feed...</p>}{!isLoading && posts.length === 0 && <div className="text-center p-8 text-gray-500">No posts in the feed yet. Be the first to share!</div>}<div className="space-y-4">{posts.map(post => <PostCard key={post.id} post={post} user={user} userData={userData}/>)}</div>{showCreateModal && <CreatePostModal user={user} userData={userData} onClose={() => setShowCreateModal(false)} />}</div>);
         }
 
-        function PostCard({ post, user }) { 
+        function PostCard({ post, user, userData }) { 
             const PostIcon = POST_TYPES[post.type]?.icon || BrainCircuit;
             const timeAgo = (timestamp) => { if (!timestamp) return 'just now'; const postDate = timestamp.toDate(); const seconds = Math.floor((new Date() - postDate) / 1000); let interval = seconds / 31536000; if (interval > 1) return Math.floor(interval) + "y ago"; interval = seconds / 86400; if (interval > 1) return Math.floor(interval) + "d ago"; interval = seconds / 3600; if (interval > 1) return Math.floor(interval) + "h ago"; interval = seconds / 60; if (interval > 1) return Math.floor(interval) + "m ago"; return "just now"; };
-            return (<div className="bg-white rounded-xl shadow-md overflow-hidden"><div className="p-5"><div className="flex items-start justify-between"><div><div className={`flex items-center text-sm font-semibold ${post.authorIsAdmin ? 'text-purple-600' : 'text-red-600'} mb-2`}><PostIcon className="w-5 h-5 mr-2" /><span>{POST_TYPES[post.type]?.label || 'Share'}</span>{post.authorIsAdmin && <span className="ml-2 text-xs bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">ADMIN</span>}</div><h4 className="text-lg font-bold text-gray-900">{post.title}</h4></div><div className="text-sm text-gray-400 whitespace-nowrap pl-2">{timeAgo(post.createdAt)}</div></div>{post.content && <p className="mt-2 text-gray-700">{post.content}</p>}{post.type === "CME_EVENT" && post.skpPoints > 0 && <p className="font-bold text-red-600 mt-2">Worth: {post.skpPoints} SKP</p>}{post.link && <a href={post.link} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center text-red-600 hover:text-red-800 font-semibold text-sm">View Resource <ExternalLink className="w-4 h-4 ml-1" /></a>}<div className="mt-4 pt-3 border-t border-gray-200"><p className="text-sm text-gray-500">Shared by <span className="font-semibold">{post.authorName}</span> ({post.authorProfession})</p></div></div></div>);
+            return (<div className="bg-white rounded-xl shadow-md overflow-hidden"><div className="p-5"><div className="flex items-start justify-between"><div><div className={`flex items-center text-sm font-semibold ${post.authorIsAdmin ? 'text-purple-600' : 'text-red-600'} mb-2`}><PostIcon className="w-5 h-5 mr-2" /><span>{POST_TYPES[post.type]?.label || 'Share'}</span>{post.authorIsAdmin && <span className="ml-2 text-xs bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">ADMIN</span>}</div><h4 className="text-lg font-bold text-gray-900">{post.title}</h4></div><div className="text-sm text-gray-400 whitespace-nowrap pl-2">{timeAgo(post.createdAt)}</div></div>{post.content && <p className="mt-2 text-gray-700">{post.content}</p>}{post.type === "CME_EVENT" ? <CMEEventCard post={post} user={user} userData={userData} /> : null}{post.link && post.type !== "CME_EVENT" && <a href={post.link} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center text-red-600 hover:text-red-800 font-semibold text-sm">View Resource <ExternalLink className="w-4 h-4 ml-1" /></a>}<div className="mt-4 pt-3 border-t border-gray-200"><p className="text-sm text-gray-500">Shared by <span className="font-semibold">{post.authorName}</span> ({post.authorProfession})</p></div></div></div>);
+        }
+        
+        function CMEEventCard({ post, user, userData }) {
+            const [registrations, setRegistrations] = useState([]);
+            const [userStatus, setUserStatus] = useState('unregistered'); // unregistered, pending, approved
+            
+            useEffect(() => {
+                const regsColRef = collection(db, "posts", post.id, "registrations");
+                const unsubscribe = onSnapshot(regsColRef, (snapshot) => {
+                    const regsData = [];
+                    let foundUser = false;
+                    snapshot.forEach(regDoc => {
+                        const data = regDoc.data();
+                        regsData.push({ ...data, id: regDoc.id });
+                        if(regDoc.id === user.uid) {
+                            setUserStatus(data.status);
+                            foundUser = true;
+                        }
+                    });
+                    setRegistrations(regsData);
+                    if(!foundUser) setUserStatus('unregistered');
+                });
+                return () => unsubscribe();
+            }, [post.id, user.uid]);
+
+            const handleRegister = async () => {
+                const regDocRef = doc(db, "posts", post.id, "registrations", user.uid);
+                await setDoc(regDocRef, {
+                    status: 'pending',
+                    userName: userData.displayName,
+                    userProfession: userData.profession,
+                    registeredAt: serverTimestamp()
+                });
+            };
+
+            const handleApprove = async (regId) => {
+                const regDocRef = doc(db, "posts", post.id, "registrations", regId);
+                const userDocRef = doc(db, "users", regId);
+                const notificationColRef = collection(db, "users", regId, "notifications");
+                
+                const batch = writeBatch(db);
+                batch.update(regDocRef, { status: 'approved' });
+                batch.update(userDocRef, { points: increment(1) });
+                batch.set(doc(notificationColRef), {
+                    title: `Registration Approved`,
+                    message: `You are now registered for the CME Event: "${post.title}".`,
+                    createdAt: serverTimestamp()
+                });
+                await batch.commit();
+            };
+
+            return (
+                <div className="mt-4">
+                     <div className="mt-3 space-y-2"><div className="flex items-center"><Users className="w-5 h-5 mr-2 text-gray-500" /><p><span className="font-semibold">Target Peserta: </span>{(post.targetProfessions || []).join(', ')}</p></div><div className="flex items-center"><Star className="w-5 h-5 mr-2 text-yellow-500" /><p><span className="font-semibold">SKP: </span>{post.skpPoints || 0}</p></div></div>
+                     {post.link && <a href={post.link} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center text-green-600 hover:text-green-800 font-semibold text-sm">View on Kemenkes LMS<ExternalLink className="w-4 h-4 ml-1" /></a>}
+                    
+                    {userData.isAdmin ? (
+                        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                            <h4 className="font-bold text-lg mb-2">Registrations</h4>
+                            {registrations.length === 0 && <p className="text-sm text-gray-500">No registrations yet.</p>}
+                            <ul className="space-y-2">{registrations.map(reg => (
+                                <li key={reg.id} className="flex justify-between items-center bg-white p-2 rounded shadow-sm">
+                                    <div><p className="font-semibold">{reg.userName}</p><p className="text-sm text-gray-500">{reg.userProfession}</p></div>
+                                    {reg.status === 'pending' ? <button onClick={() => handleApprove(reg.id)} className="bg-green-500 text-white px-3 py-1 text-sm rounded-full hover:bg-green-600">Approve</button> : <span className="text-sm font-bold text-green-600">Approved</span>}
+                                </li>
+                            ))}</ul>
+                        </div>
+                    ) : (
+                        <button 
+                            onClick={handleRegister} 
+                            disabled={userStatus !== 'unregistered'}
+                            className="w-full mt-4 font-bold py-2 px-4 rounded-lg transition-colors bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                        >
+                            {userStatus === 'unregistered' && 'Register for 1 Point'}
+                            {userStatus === 'pending' && 'Registration Pending'}
+                            {userStatus === 'approved' && 'Registered & Approved'}
+                        </button>
+                    )}
+                </div>
+            );
         }
 
         function CreatePostModal({ user, userData, onClose }) {
@@ -186,20 +258,27 @@
             const [link, setLink] = useState('');
             const [content, setContent] = useState('');
             const [skpPoints, setSkpPoints] = useState(0);
+            const [targetProfessions, setTargetProfessions] = useState([]);
             const [isSubmitting, setIsSubmitting] = useState(false);
             const availablePostTypes = Object.keys(POST_TYPES).filter(key => !POST_TYPES[key].adminOnly || userData.isAdmin);
+            
+            const handleProfessionChange = (e) => {
+                const options = e.target.options;
+                const value = [];
+                for (let i = 0, l = options.length; i < l; i++) { if (options[i].selected) { value.push(options[i].value); } }
+                setTargetProfessions(value);
+            };
+            
             const handleSubmit = async () => {
                 if (!title.trim()) return;
                 setIsSubmitting(true);
                 const postData = { type, title, link, content, authorId: user.uid, authorName: userData.displayName, authorProfession: userData.profession, createdAt: serverTimestamp(), authorIsAdmin: userData.isAdmin };
-                if (type === "CME_EVENT") {
-                    postData.skpPoints = Number(skpPoints);
-                }
+                if (type === "CME_EVENT") { postData.skpPoints = Number(skpPoints); postData.targetProfessions = targetProfessions; }
                 try { await addDoc(collection(db, "posts"), postData); if(type !== "CME_EVENT") { const userDocRef = doc(db, "users", user.uid); await updateDoc(userDocRef, { points: increment(POST_TYPES[type]?.points || 0) }); } } catch (e) { console.error("Error posting:", e); }
                 setIsSubmitting(false);
                 onClose();
             };
-            return (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-xl shadow-2xl w-full max-w-lg"><div className="p-6"><h3 className="text-xl font-bold mb-4">Share with the Academy</h3><div className="space-y-4"><div><label className="block text-sm font-medium">Type</label><select value={type} onChange={e => setType(e.target.value)} className="w-full bg-gray-50 p-2 rounded-lg border">{availablePostTypes.map(key => (<option key={key} value={key}>{POST_TYPES[key].label} (+{POST_TYPES[key].points} pts)</option>))}</select></div><div><label className="block text-sm font-medium">Title</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded-lg border" /></div>{type === "CME_EVENT" && <div><label className="block text-sm font-medium">SKP Points</label><input type="number" value={skpPoints} onChange={e => setSkpPoints(e.target.value)} className="w-full p-2 rounded-lg border" /></div>}<div><label className="block text-sm font-medium">Description</label><textarea value={content} onChange={e => setContent(e.target.value)} rows="4" className="w-full p-2 rounded-lg border"></textarea></div><div><label className="block text-sm font-medium">Link</label><input type="url" value={link} onChange={e => setLink(e.target.value)} className="w-full p-2 rounded-lg border" /></div></div></div><div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3"><button onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg">Cancel</button><button onClick={handleSubmit} disabled={isSubmitting} className="bg-red-600 text-white px-4 py-2 rounded-lg disabled:bg-red-300">Share</button></div></div></div>);
+            return (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-xl shadow-2xl w-full max-w-lg"><div className="p-6"><h3 className="text-xl font-bold mb-4">Share with the Academy</h3><div className="space-y-4"><div><label className="block text-sm font-medium">Type</label><select value={type} onChange={e => setType(e.target.value)} className="w-full bg-gray-50 p-2 rounded-lg border">{availablePostTypes.map(key => (<option key={key} value={key}>{POST_TYPES[key].label} (+{POST_TYPES[key].points} pts)</option>))}</select></div><div><label className="block text-sm font-medium">Title</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded-lg border" /></div>{type === "CME_EVENT" && <><div><label className="block text-sm font-medium">SKP Points</label><input type="number" value={skpPoints} onChange={e => setSkpPoints(e.target.value)} className="w-full p-2 rounded-lg border" /></div><div><label className="block text-sm font-medium">Target Peserta</label><select multiple={true} value={targetProfessions} onChange={handleProfessionChange} className="w-full h-32 bg-gray-50 p-2 rounded-lg border">{PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div></>}<div><label className="block text-sm font-medium">Description</label><textarea value={content} onChange={e => setContent(e.target.value)} rows="4" className="w-full p-2 rounded-lg border"></textarea></div><div><label className="block text-sm font-medium">Link</label><input type="url" value={link} onChange={e => setLink(e.target.value)} className="w-full p-2 rounded-lg border" /></div></div></div><div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3"><button onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg">Cancel</button><button onClick={handleSubmit} disabled={isSubmitting} className="bg-red-600 text-white px-4 py-2 rounded-lg disabled:bg-red-300">Share</button></div></div></div>);
         }
         function Discussions({ user, userData }) {
             const [topics, setTopics] = useState([]);
