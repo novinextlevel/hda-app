@@ -70,7 +70,7 @@
         const db = getFirestore(app);
 
         // --- Admin Configuration ---
-        const ADMIN_UID = "18076815954052619302";
+        const ADMIN_UID = "6x8MEGmOnQVpPiBiqfaimvJB9Rk2";
         
         function App() {
             const [user, setUser] = useState(null);
@@ -80,46 +80,42 @@
             const [authError, setAuthError] = useState(null);
 
             useEffect(() => {
-                const signInAndSetup = async () => {
-                    try {
-                        await signInAnonymously(auth);
-                    } catch (error) {
-                         if (error.code === 'auth/requests-from-referer-blocked' || error.message.includes('auth/requests-from-referer')) {
-                            const domain = new URL(window.location.href).hostname;
-                             setAuthError(`FIREBASE SETUP ERROR: The current website (${domain}) is not authorized. Please go to your Firebase project's "Authentication" -> "Settings" -> "Authorized domains" and add this domain.`);
-                        } else {
-                            setAuthError(`An unexpected authentication error occurred: ${error.message}`);
-                        }
-                        console.error("Authentication error:", error);
-                        setIsLoading(false);
-                    }
-                };
-
                 const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
                     if (firebaseUser) {
+                        setAuthError(null); // Clear previous errors on successful sign-in
                         setUser(firebaseUser);
                         const userDocRef = doc(db, "users", firebaseUser.uid);
-                        const userDocSnap = await getDoc(userDocRef);
-                        if (userDocSnap.exists()) {
-                            const profileData = userDocSnap.data();
-                            profileData.isAdmin = firebaseUser.uid === ADMIN_UID;
-                            setUserData(profileData);
-                        } else {
-                            setUserData(null);
+                        try {
+                            const userDocSnap = await getDoc(userDocRef);
+                            if (userDocSnap.exists()) {
+                                const profileData = userDocSnap.data();
+                                profileData.isAdmin = firebaseUser.uid === ADMIN_UID;
+                                setUserData(profileData);
+                            } else {
+                                setUserData(null); // New user, needs to create a profile
+                            }
+                        } catch (firestoreError) {
+                            console.error("Firestore error:", firestoreError);
+                            setAuthError("Could not connect to the database. Please check your Firestore security rules.");
+                        } finally {
+                            setIsLoading(false);
                         }
-                        setIsLoading(false);
                     } else {
-                        // This case handles logout
-                        setUser(null);
-                        setUserData(null);
-                         // If not loading and no user, we might need to re-trigger sign-in
-                        if (!isLoading) {
-                            signInAndSetup();
+                        // No user is signed in.
+                        try {
+                            await signInAnonymously(auth);
+                        } catch (error) {
+                             if (error.code === 'auth/requests-from-referer-blocked') {
+                                const domain = new URL(window.location.href).hostname;
+                                setAuthError(`This website (${domain}) is not authorized. Please add it to your Firebase project's "Authentication > Settings > Authorized domains" list.`);
+                            } else {
+                                setAuthError(`Authentication failed: ${error.message}`);
+                            }
+                            console.error("Authentication error:", error);
+                            setIsLoading(false);
                         }
                     }
                 });
-                
-                signInAndSetup();
 
                 return () => unsubscribe();
             }, []);
@@ -160,9 +156,9 @@
                     <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-8 border-4 border-red-500">
                         <div className="text-center">
                             <h1 className="text-2xl font-bold text-red-700">Connection Blocked</h1>
-                            <p className="mt-4 text-gray-700">Your Firebase project is blocking requests from this website. You need to authorize it.</p>
+                            <p className="mt-4 text-gray-700">{message}</p>
                             <div className="mt-6 p-4 bg-gray-100 rounded-lg text-left">
-                                <p className="font-semibold">Follow these steps:</p>
+                                <p className="font-semibold">To fix this:</p>
                                 <ol className="list-decimal list-inside mt-2 space-y-1">
                                     <li>Go to your Firebase project console.</li>
                                     <li>Navigate to **Build > Authentication > Settings**.</li>
