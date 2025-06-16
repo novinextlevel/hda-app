@@ -41,10 +41,10 @@
 
         // --- Icon Components (using inline SVG) ---
         const Icon = ({ children, className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>;
+        const AcademyLogo = ({className}) => <img src="https://d3g5p2xfa2p0n1.cloudfront.net/prod/academy/3f1952e4638c5f4931343715c369a039.svg" className={className} alt="Halodoc Academy Logo" />;
         const Award = ({className}) => <Icon className={className}><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 17 17 23 15.79 13.88"></polyline></Icon>;
         const BookOpen = ({className}) => <Icon className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></Icon>;
         const MessageSquare = ({className}) => <Icon className={className}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></Icon>;
-        const Stethoscope = ({className}) => <Icon className={className}><path d="M4.8 2.3A.3.3 0 1 0 5.4 2a2.4 2.4 0 0 1 3.2 0H16a6 6 0 0 1 6 6v3a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2V9a4 4 0 0 0-4-4h-.5a2.4 2.4 0 0 1-3.2 0A.3.3 0 1 0 4.8 2.3Z"></path><path d="M8 15v1a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-1a2 2 0 1 0-8 0Z"></path><path d="M9 13H4a2 2 0 0 0-2 2v2"></path></Icon>;
         const User = ({className}) => <Icon className={className}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></Icon>;
         const PlusCircle = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></Icon>;
         const BrainCircuit = ({className}) => <Icon className={className}><path d="M12 2a2.5 2.5 0 0 1 3 4.5v0a3.5 3.5 0 0 1 4.2 6.3c.2.5.3 1.2.3 2.2a4 4 0 0 1-8 0c0-1 .1-1.7.3-2.2a3.5 3.5 0 0 1 4.2-6.3v0a2.5 2.5 0 0 1 3-4.5Z"></path><path d="M19.5 12c.3-1 .4-2.2.4-3.5a4.5 4.5 0 0 0-8.2-2.3"></path><path d="M4.5 12c-.3-1-.4-2.2-.4-3.5A4.5 4.5 0 0 1 8.3 6.2"></path><path d="M12 15.5a2.5 2.5 0 0 1 3 4.5v0a3.5 3.5 0 0 1 4.2 6.3c.2.5.3 1.2.3 2.2a4 4 0 0 1-8 0c0-1 .1-1.7.3-2.2a3.5 3.5 0 0 1 4.2-6.3v0a2.5 2.5 0 0 1 3-4.5Z"></path></Icon>;
@@ -54,8 +54,9 @@
         const ChevronLeft = ({className}) => <Icon className={className}><polyline points="15 18 9 12 15 6"></polyline></Icon>;
         const LogOut = ({className}) => <Icon className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></Icon>;
         const Calendar = ({className}) => <Icon className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></Icon>;
-        const Bell = ({className}) => <Icon className={className}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></Icon>;
         const Users = ({className}) => <Icon className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></Icon>;
+        const CheckCircle = ({className}) => <Icon className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></Icon>;
+
 
         // --- Firebase Configuration and Initialization ---
         const firebaseConfig = {
@@ -135,10 +136,10 @@
                 try { if (isLogin) { await signInWithEmailAndPassword(auth, email, password); } else { await createUserWithEmailAndPassword(auth, email, password); } } catch (err) { setError(err.message); } 
                 finally { setIsLoading(false); }
             };
-            return (<div className="min-h-screen flex items-center justify-center p-4"><div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8"><div className="text-center mb-6"><Stethoscope className="w-12 h-12 mx-auto text-red-500" /><h1 className="text-2xl font-bold text-gray-800 mt-2">Halodoc Academy</h1></div><h2 className="text-xl font-bold text-center mb-4">{isLogin ? 'Login' : 'Register'}</h2>{error && <p className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</p>}<form onSubmit={handleSubmit} className="space-y-4"><div><label className="block text-sm font-medium">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 rounded-lg border" required /></div><div><label className="block text-sm font-medium">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 rounded-lg border" required /></div><button type="submit" disabled={isLoading} className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 disabled:bg-red-300">{isLoading ? 'Loading...' : (isLogin ? 'Login' : 'Register')}</button></form><div className="mt-4 text-center"><button onClick={() => setIsLogin(!isLogin)} className="text-sm text-red-600 hover:underline">{isLogin ? 'Need an account? Register' : 'Already have an account? Login'}</button></div></div></div>);
+            return (<div className="min-h-screen flex items-center justify-center p-4"><div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8"><div className="text-center mb-6"><AcademyLogo className="w-16 h-16 mx-auto" /><h1 className="text-2xl font-bold text-gray-800 mt-2">Halodoc Academy</h1></div><h2 className="text-xl font-bold text-center mb-4">{isLogin ? 'Login' : 'Register'}</h2>{error && <p className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</p>}<form onSubmit={handleSubmit} className="space-y-4"><div><label className="block text-sm font-medium">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 rounded-lg border" required /></div><div><label className="block text-sm font-medium">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 rounded-lg border" required /></div><button type="submit" disabled={isLoading} className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 disabled:bg-red-300">{isLoading ? 'Loading...' : (isLogin ? 'Login' : 'Register')}</button></form><div className="mt-4 text-center"><button onClick={() => setIsLogin(!isLogin)} className="text-sm text-red-600 hover:underline">{isLogin ? 'Need an account? Register' : 'Already have an account? Login'}</button></div></div></div>);
         }
         
-        function LoadingScreen({ message = "Connecting to Halodoc Academy..." }) { return (<div className="flex flex-col items-center justify-center min-h-screen"><Stethoscope className="w-16 h-16 text-red-500 animate-pulse" /><h1 className="mt-4 text-xl font-semibold text-red-700">{message}</h1></div>); }
+        function LoadingScreen({ message = "Connecting to Halodoc Academy..." }) { return (<div className="flex flex-col items-center justify-center min-h-screen"><AcademyLogo className="w-20 h-20 animate-pulse" /><h1 className="mt-4 text-xl font-semibold text-red-700">{message}</h1></div>); }
         function ProfileSetupScreen({ user, onProfileCreated }) {
             const [displayName, setDisplayName] = useState('');
             const [profession, setProfession] = useState('');
@@ -153,7 +154,7 @@
             return (<div className="min-h-screen flex items-center justify-center p-4"><div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8"><div className="text-center mb-6"><BrainCircuit className="w-12 h-12 mx-auto text-red-500" /><h1 className="text-2xl font-bold text-gray-800 mt-2">Welcome to Halodoc Academy</h1><p className="text-gray-500">Let's set up your professional profile.</p></div>{error && <p className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</p>}<div className="space-y-6"><div><label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label><input id="displayName" type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g. Dr. Budi Santoso" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" /></div><div><label htmlFor="profession" className="block text-sm font-medium text-gray-700 mb-1">Profession</label><select id="profession" value={profession} onChange={(e) => setProfession(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 bg-white"><option value="" disabled>Select your profession...</option>{PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div></div><div className="mt-8"><button onClick={handleSetup} disabled={isSaving} className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-red-300 transition-colors">{isSaving ? "Saving..." : "Join Academy"}</button></div></div></div>);
         }
         function Header({ user, userData }) {
-             return (<header className="bg-white shadow-sm sticky top-0 z-20 p-4 flex justify-between items-center"><div className="flex items-center space-x-3"><Stethoscope className="w-8 h-8 text-red-600" /><h1 className="text-xl font-bold text-gray-800">Halodoc Academy</h1></div><div className="flex items-center space-x-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"><Award className="w-5 h-5" /><span className="font-semibold">{userData.points} Pts</span></div></header>);
+            return (<header className="bg-white shadow-sm sticky top-0 z-20 p-4 flex justify-between items-center"><div className="flex items-center space-x-3"><AcademyLogo className="h-8" /></div><div className="flex items-center space-x-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"><Award className="w-5 h-5" /><span className="font-semibold">{userData.points} Pts</span></div></header>);
         }
         function NavBar({ currentPage, setCurrentPage }) { const navItems = [{ id: 'feed', label: 'Feed', icon: BookOpen }, { id: 'discussions', label: 'Discussions', icon: MessageSquare }, { id: 'leaderboard', label: 'Leaderboard', icon: Award }, { id: 'profile', label: 'Profile', icon: User },]; return (<nav className="fixed bottom-0 left-0 right-0 bg-white shadow-t-lg border-t border-gray-200 z-10"><div className="flex justify-around max-w-4xl mx-auto">{navItems.map(item => (<button key={item.id} onClick={() => setCurrentPage(item.id)} className={`flex flex-col items-center justify-center w-full pt-3 pb-2 text-sm font-medium transition-colors ${currentPage === item.id ? 'text-red-600' : 'text-gray-500 hover:text-red-500'}`}><item.icon className={`w-6 h-6 mb-1`} />{item.label}</button>))}</div></nav>); }
         const POST_TYPES = { CME: { label: "CME Topic", points: 5 }, CASE: { label: "Case Discussion", points: 10 }, PUBLICATION: { label: "Publication", icon: BrainCircuit, points: 1 }, CME_EVENT: { label: "CME Event", icon: Calendar, points: 0, adminOnly: true },};
@@ -169,55 +170,34 @@
         function PostCard({ post, user, userData }) { 
             const PostIcon = POST_TYPES[post.type]?.icon || BrainCircuit;
             const timeAgo = (timestamp) => { if (!timestamp) return 'just now'; const postDate = timestamp.toDate(); const seconds = Math.floor((new Date() - postDate) / 1000); let interval = seconds / 31536000; if (interval > 1) return Math.floor(interval) + "y ago"; interval = seconds / 86400; if (interval > 1) return Math.floor(interval) + "d ago"; interval = seconds / 3600; if (interval > 1) return Math.floor(interval) + "h ago"; interval = seconds / 60; if (interval > 1) return Math.floor(interval) + "m ago"; return "just now"; };
-            return (<div className="bg-white rounded-xl shadow-md overflow-hidden"><div className="p-5"><div className="flex items-start justify-between"><div><div className={`flex items-center text-sm font-semibold ${post.authorIsAdmin ? 'text-purple-600' : 'text-red-600'} mb-2`}><PostIcon className="w-5 h-5 mr-2" /><span>{POST_TYPES[post.type]?.label || 'Share'}</span>{post.authorIsAdmin && <span className="ml-2 text-xs bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">ADMIN</span>}</div><h4 className="text-lg font-bold text-gray-900">{post.title}</h4></div><div className="text-sm text-gray-400 whitespace-nowrap pl-2">{timeAgo(post.createdAt)}</div></div>{post.content && <p className="mt-2 text-gray-700">{post.content}</p>}{post.type === "CME_EVENT" ? <CMEEventCard post={post} user={user} userData={userData} /> : null}{post.link && post.type !== "CME_EVENT" && <a href={post.link} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center text-red-600 hover:text-red-800 font-semibold text-sm">View Resource <ExternalLink className="w-4 h-4 ml-1" /></a>}<div className="mt-4 pt-3 border-t border-gray-200"><p className="text-sm text-gray-500">Shared by <span className="font-semibold">{post.authorName}</span> ({post.authorProfession})</p></div></div></div>);
+            return (<div className="bg-white rounded-xl shadow-md overflow-hidden"><div className="p-5"><div className="flex items-start justify-between"><div><div className={`flex items-center text-sm font-semibold ${post.authorIsAdmin ? 'text-purple-600' : 'text-red-600'} mb-2`}><PostIcon className="w-5 h-5 mr-2" /><span>{POST_TYPES[post.type]?.label || 'Share'}</span>{post.authorIsAdmin && <span className="ml-2 text-xs bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">ADMIN</span>}</div><h4 className="text-lg font-bold text-gray-900">{post.title}</h4></div><div className="text-sm text-gray-400 whitespace-nowrap pl-2">{timeAgo(post.createdAt)}</div></div>{post.content && <p className="mt-2 text-gray-700">{post.content}</p>}{post.type === "CME_EVENT" ? <CMEEventCard post={post} user={user} userData={userData} /> : (post.link && <a href={post.link} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center text-red-600 hover:text-red-800 font-semibold text-sm">View Resource <ExternalLink className="w-4 h-4 ml-1" /></a>)}<div className="mt-4 pt-3 border-t border-gray-200"><p className="text-sm text-gray-500">Shared by <span className="font-semibold">{post.authorName}</span> ({post.authorProfession})</p></div></div></div>);
         }
         
         function CMEEventCard({ post, user, userData }) {
             const [registrations, setRegistrations] = useState([]);
-            const [userStatus, setUserStatus] = useState('unregistered'); // unregistered, pending, approved
+            const [userStatus, setUserStatus] = useState('unregistered');
+            const [showRegModal, setShowRegModal] = useState(false);
             
             useEffect(() => {
                 const regsColRef = collection(db, "posts", post.id, "registrations");
                 const unsubscribe = onSnapshot(regsColRef, (snapshot) => {
                     const regsData = [];
                     let foundUser = false;
-                    snapshot.forEach(regDoc => {
-                        const data = regDoc.data();
-                        regsData.push({ ...data, id: regDoc.id });
-                        if(regDoc.id === user.uid) {
-                            setUserStatus(data.status);
-                            foundUser = true;
-                        }
-                    });
+                    snapshot.forEach(regDoc => { const data = regDoc.data(); regsData.push({ ...data, id: regDoc.id }); if(regDoc.id === user.uid) { setUserStatus(data.status); foundUser = true; } });
                     setRegistrations(regsData);
                     if(!foundUser) setUserStatus('unregistered');
                 });
                 return () => unsubscribe();
             }, [post.id, user.uid]);
 
-            const handleRegister = async () => {
-                const regDocRef = doc(db, "posts", post.id, "registrations", user.uid);
-                await setDoc(regDocRef, {
-                    status: 'pending',
-                    userName: userData.displayName,
-                    userProfession: userData.profession,
-                    registeredAt: serverTimestamp()
-                });
-            };
-
-            const handleApprove = async (regId) => {
+            const handleApprove = async (regId, regName) => {
                 const regDocRef = doc(db, "posts", post.id, "registrations", regId);
                 const userDocRef = doc(db, "users", regId);
                 const notificationColRef = collection(db, "users", regId, "notifications");
-                
                 const batch = writeBatch(db);
                 batch.update(regDocRef, { status: 'approved' });
                 batch.update(userDocRef, { points: increment(1) });
-                batch.set(doc(notificationColRef), {
-                    title: `Registration Approved`,
-                    message: `You are now registered for the CME Event: "${post.title}".`,
-                    createdAt: serverTimestamp()
-                });
+                batch.set(doc(notificationColRef), { title: `Registration Approved`, message: `You are now registered for: "${post.title}".`, createdAt: serverTimestamp() });
                 await batch.commit();
             };
 
@@ -228,26 +208,59 @@
                     
                     {userData.isAdmin ? (
                         <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                            <h4 className="font-bold text-lg mb-2">Registrations</h4>
+                            <h4 className="font-bold text-lg mb-2">Registrations ({registrations.length})</h4>
                             {registrations.length === 0 && <p className="text-sm text-gray-500">No registrations yet.</p>}
-                            <ul className="space-y-2">{registrations.map(reg => (
+                            <ul className="space-y-2 max-h-48 overflow-y-auto">{registrations.map(reg => (
                                 <li key={reg.id} className="flex justify-between items-center bg-white p-2 rounded shadow-sm">
-                                    <div><p className="font-semibold">{reg.userName}</p><p className="text-sm text-gray-500">{reg.userProfession}</p></div>
-                                    {reg.status === 'pending' ? <button onClick={() => handleApprove(reg.id)} className="bg-green-500 text-white px-3 py-1 text-sm rounded-full hover:bg-green-600">Approve</button> : <span className="text-sm font-bold text-green-600">Approved</span>}
+                                    <div><p className="font-semibold">{reg.fullName}</p><p className="text-sm text-gray-500">NIK: {reg.nik}</p></div>
+                                    {reg.status === 'pending' ? <button onClick={() => handleApprove(reg.id)} className="bg-green-500 text-white px-3 py-1 text-sm rounded-full hover:bg-green-600">Approve</button> : <span className="text-sm font-bold text-green-600 flex items-center"><CheckCircle className="w-4 h-4 mr-1"/>Approved</span>}
                                 </li>
                             ))}</ul>
                         </div>
                     ) : (
-                        <button 
-                            onClick={handleRegister} 
-                            disabled={userStatus !== 'unregistered'}
-                            className="w-full mt-4 font-bold py-2 px-4 rounded-lg transition-colors bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-                        >
-                            {userStatus === 'unregistered' && 'Register for 1 Point'}
-                            {userStatus === 'pending' && 'Registration Pending'}
-                            {userStatus === 'approved' && 'Registered & Approved'}
-                        </button>
+                        <>
+                            <button onClick={() => setShowRegModal(true)} disabled={userStatus !== 'unregistered'} className="w-full mt-4 font-bold py-2 px-4 rounded-lg transition-colors bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">
+                                {userStatus === 'unregistered' && 'Register for 1 Point'}
+                                {userStatus === 'pending' && 'Registration Pending'}
+                                {userStatus === 'approved' && 'Registered & Approved'}
+                            </button>
+                            {showRegModal && <CMERegistrationModal post={post} user={user} userData={userData} onClose={() => setShowRegModal(false)} />}
+                        </>
                     )}
+                </div>
+            );
+        }
+
+        function CMERegistrationModal({ post, user, userData, onClose }) {
+            const [fullName, setFullName] = useState(userData.displayName || '');
+            const [nik, setNik] = useState('');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!fullName.trim() || !nik.trim()) return;
+                setIsSubmitting(true);
+                const regDocRef = doc(db, "posts", post.id, "registrations", user.uid);
+                await setDoc(regDocRef, { status: 'pending', fullName, nik, registeredAt: serverTimestamp() });
+                setIsSubmitting(false);
+                onClose();
+            };
+
+            return (
+                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+                        <form onSubmit={handleSubmit}>
+                            <div className="p-6">
+                                <h3 className="text-xl font-bold mb-1">Register for CME</h3>
+                                <p className="text-gray-600 mb-4">{post.title}</p>
+                                <div className="space-y-4">
+                                    <div><label className="block text-sm font-medium">Full Name</label><input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full p-2 rounded-lg border" required /></div>
+                                    <div><label className="block text-sm font-medium">NIK (National ID)</label><input type="text" value={nik} onChange={e => setNik(e.target.value)} className="w-full p-2 rounded-lg border" required /></div>
+                                </div>
+                            </div>
+                            <div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3"><button type="button" onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg">Cancel</button><button type="submit" disabled={isSubmitting} className="bg-red-600 text-white px-4 py-2 rounded-lg disabled:bg-red-300">Submit Registration</button></div>
+                        </form>
+                    </div>
                 </div>
             );
         }
@@ -261,14 +274,7 @@
             const [targetProfessions, setTargetProfessions] = useState([]);
             const [isSubmitting, setIsSubmitting] = useState(false);
             const availablePostTypes = Object.keys(POST_TYPES).filter(key => !POST_TYPES[key].adminOnly || userData.isAdmin);
-            
-            const handleProfessionChange = (e) => {
-                const options = e.target.options;
-                const value = [];
-                for (let i = 0, l = options.length; i < l; i++) { if (options[i].selected) { value.push(options[i].value); } }
-                setTargetProfessions(value);
-            };
-            
+            const handleProfessionChange = (e) => { const options = e.target.options; const value = []; for (let i = 0, l = options.length; i < l; i++) { if (options[i].selected) { value.push(options[i].value); } } setTargetProfessions(value); };
             const handleSubmit = async () => {
                 if (!title.trim()) return;
                 setIsSubmitting(true);
@@ -283,9 +289,20 @@
         function Discussions({ user, userData }) {
             const [topics, setTopics] = useState([]);
             const [isLoading, setIsLoading] = useState(true);
+            const [selectedTopic, setSelectedTopic] = useState(null);
             const [showCreateModal, setShowCreateModal] = useState(false);
             useEffect(() => { const q = query(collection(db, "discussions"), where("professionGroup", "==", userData.profession)); const unsubscribe = onSnapshot(q, (querySnapshot) => { const topicsData = []; querySnapshot.forEach((doc) => topicsData.push({ id: doc.id, ...doc.data() })); topicsData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); setTopics(topicsData); setIsLoading(false); }, (err) => { console.error("Discussions Error:", err); setIsLoading(false); }); return () => unsubscribe(); }, [userData.profession]);
-            return (<div><div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Discussions for {userData.profession}s</h2><button onClick={() => setShowCreateModal(true)} className="flex items-center bg-red-600 text-white font-semibold py-2 px-4 rounded-full shadow hover:bg-red-700 transition-colors"><PlusCircle className="w-5 h-5 mr-2" /> Start Topic</button></div>{isLoading && <p>Loading discussions...</p>}{!isLoading && topics.length === 0 && <div className="text-center p-8 text-gray-500">No topics for your profession yet.</div>}<div className="space-y-3">{topics.map(topic => <div key={topic.id} className="bg-white p-4 rounded-lg shadow-sm cursor-pointer hover:shadow-md"><h3 className="font-bold text-lg">{topic.title}</h3><p className="text-sm text-gray-500">Started by {topic.authorName}</p></div>)}</div>{showCreateModal && <CreateDiscussionModal user={user} userData={userData} onClose={() => setShowCreateModal(false)} />}</div>);
+            
+            if (selectedTopic) { return <DiscussionTopicView topic={selectedTopic} user={user} userData={userData} onBack={() => setSelectedTopic(null)} /> }
+
+            return (<div><div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Discussions for {userData.profession}s</h2><button onClick={() => setShowCreateModal(true)} className="flex items-center bg-red-600 text-white font-semibold py-2 px-4 rounded-full shadow hover:bg-red-700 transition-colors"><PlusCircle className="w-5 h-5 mr-2" /> Start Topic</button></div>{isLoading && <p>Loading discussions...</p>}{!isLoading && topics.length === 0 && <div className="text-center p-8 text-gray-500">No topics for your profession yet.</div>}<div className="space-y-3">{topics.map(topic => <div key={topic.id} onClick={() => setSelectedTopic(topic)} className="bg-white p-4 rounded-lg shadow-sm cursor-pointer hover:shadow-md"><h3 className="font-bold text-lg">{topic.title}</h3><p className="text-sm text-gray-500">Started by {topic.authorName}</p></div>)}</div>{showCreateModal && <CreateDiscussionModal user={user} userData={userData} onClose={() => setShowCreateModal(false)} />}</div>);
+        }
+        function DiscussionTopicView({ topic, user, userData, onBack }) {
+            const [replies, setReplies] = useState([]);
+            const [newReply, setNewReply] = useState("");
+            useEffect(() => { const q = query(collection(db, "discussions", topic.id, "replies")); const unsubscribe = onSnapshot(q, (snapshot) => { const repliesData = []; snapshot.forEach(doc => repliesData.push(doc.data())); repliesData.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)); setReplies(repliesData); }); return () => unsubscribe(); }, [topic.id]);
+            const handleReply = async (e) => { e.preventDefault(); if (!newReply.trim()) return; await addDoc(collection(db, "discussions", topic.id, "replies"), { text: newReply, authorName: userData.displayName, createdAt: serverTimestamp() }); setNewReply(""); };
+            return (<div className="pb-20"><button onClick={onBack} className="flex items-center text-red-600 font-semibold mb-4"><ChevronLeft className="w-5 h-5 mr-1" />Back to Discussions</button><div className="bg-white p-4 rounded-lg shadow-md mb-4"><h2 className="text-xl font-bold">{topic.title}</h2><p className="text-sm text-gray-600">Started by {topic.authorName}</p></div><div className="space-y-3 mb-4">{replies.map((reply, i) => (<div key={i} className="bg-white p-3 rounded-lg shadow-sm"><p className="text-gray-800">{reply.text}</p><p className="text-xs text-gray-500 mt-2 font-medium">- {reply.authorName}</p></div>))}</div><form onSubmit={handleReply} className="bg-white p-3 rounded-lg shadow"><textarea value={newReply} onChange={(e) => setNewReply(e.target.value)} placeholder="Write your reply..." className="w-full border-gray-200 border rounded-md p-2" rows="3"></textarea><button type="submit" className="w-full mt-2 bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">Post Reply</button></form></div>);
         }
         function CreateDiscussionModal({user, userData, onClose}) {
              const [title, setTitle] = useState('');
@@ -293,7 +310,11 @@
              const handleSubmit = async () => { if (!title.trim()) return; setIsSubmitting(true); const discussionData = { title, authorId: user.uid, authorName: userData.displayName, professionGroup: userData.profession, createdAt: serverTimestamp() }; await addDoc(collection(db, "discussions"), discussionData); await updateDoc(doc(db, "users", user.uid), { points: increment(3) }); setIsSubmitting(false); onClose(); };
              return (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-xl shadow-2xl w-full max-w-lg"><div className="p-6"><h3 className="text-xl font-bold mb-4">Start a New Discussion</h3><div><label className="block text-sm font-medium">Title</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded-lg border" /></div></div><div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3"><button onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg">Cancel</button><button onClick={handleSubmit} disabled={isSubmitting} className="bg-red-600 text-white px-4 py-2 rounded-lg disabled:bg-red-300">Start Topic</button></div></div></div>);
         }
-        function Leaderboard() { return <div className="text-center p-8 text-gray-500">Leaderboard will appear here.</div>; }
+        function Leaderboard() {
+             const [users, setUsers] = useState([]);
+             useEffect(() => { const q = query(collection(db, "users")); const unsubscribe = onSnapshot(q, (snapshot) => { const usersData = []; snapshot.forEach(doc => usersData.push(doc.data())); usersData.sort((a,b) => b.points - a.points); setUsers(usersData); }); return () => unsubscribe(); }, []);
+             return (<div className="pb-20"><h2 className="text-2xl font-bold mb-4">Leaderboard</h2><div className="bg-white rounded-xl shadow-md overflow-hidden"><ul className="divide-y divide-gray-200">{users.map((u, index) => (<li key={u.uid} className="p-4 flex items-center justify-between"><div className="flex items-center"><span className={`font-bold text-lg w-10 text-center ${index < 3 ? 'text-yellow-500' : 'text-gray-500'}`}>{index + 1}</span><div className="ml-4"><p className="font-semibold text-gray-800">{u.displayName}</p><p className="text-sm text-gray-500">{u.profession}</p></div></div><div className="flex items-center font-bold text-red-600 bg-red-100 px-3 py-1 rounded-full"><Star className="w-4 h-4 mr-1 text-yellow-400" />{u.points}</div></li>))}</ul></div></div>);
+        }
         function Profile({ user, userData }) { return (<div className="pb-20"><h2 className="text-2xl font-bold mb-4">My Profile</h2><div className="bg-white rounded-xl shadow-lg p-6 text-center"><User className="w-20 h-20 mx-auto text-gray-300 bg-gray-100 rounded-full p-2 mb-4" /><h3 className="text-2xl font-bold">{userData.displayName}</h3><p className="text-gray-600">{userData.profession}</p>{userData.isAdmin && <p className="text-sm font-bold text-red-600 bg-red-100 rounded-full py-1 my-2">ADMINISTRATOR</p>}<div className="mt-4 flex items-center justify-center space-x-2 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full"><Award className="w-6 h-6" /><span className="text-xl font-bold">{userData.points} Points</span></div><div className="mt-6 text-xs text-gray-400 break-all"><p className="font-semibold">User ID:</p><p className="font-mono">{user.uid}</p></div><div className="mt-6 border-t pt-4"><button onClick={() => signOut(auth)} className="flex items-center justify-center w-full bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-red-600 transition-colors"><LogOut className="w-5 h-5 mr-2" /> Logout</button></div></div></div>); }
 
         ReactDOM.render(<App />, document.getElementById('root'));
