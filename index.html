@@ -58,8 +58,7 @@
         const CheckCircle = ({className}) => <Icon className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></Icon>;
         const History = ({className}) => <Icon className={className}><path d="M3 3v18h18"></path><path d="M21 15L15 9l-4 4-4-4"></path></Icon>;
         const Bell = ({className}) => <Icon className={className}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></Icon>;
-
-        // --- CORRECTED: POST_TYPES defined at the top ---
+        
         const POST_TYPES = { 
             CME: { label: "CME Topic", icon: BookOpen, points: 5 }, 
             CASE: { label: "Case Discussion", icon: FileText, points: 10 }, 
@@ -227,7 +226,7 @@
 
             return (
                 <div className="mt-4">
-                     <div className="mt-3 space-y-2"><div className="flex items-center"><Users className="w-5 h-5 mr-2 text-gray-500" /><p><span className="font-semibold">Target Peserta: </span>{(post.targetProfessions || []).join(', ')}</p></div><div className="flex items-center"><Star className="w-5 h-5 mr-2 text-yellow-500" /><p><span className="font-semibold">SKP: </span>{post.skpPoints || 0}</p></div></div>
+                     <div className="mt-3 space-y-2"><div className="flex items-center"><Users className="w-5 h-5 mr-2 text-gray-500" /><p><span className="font-semibold">Target Peserta: </span>{(post.targetProfessions || []).join(', ')}</p></div><div className="flex items-center"><Star className="w-5 h-5 mr-2 text-yellow-500" /><p><span className="font-semibold">SKP: </span>{post.skpPoints || 0}</p></div><div className="flex items-center"><Calendar className="w-5 h-5 mr-2 text-gray-500" /><p><span className="font-semibold">Tanggal Pelaksanaan: </span>{post.eventDate || 'TBA'}</p></div><div className="flex items-center"><Calendar className="w-5 h-5 mr-2 text-red-500" /><p><span className="font-semibold">Pendaftaran Ditutup: </span>{post.registrationDeadline || 'TBA'}</p></div><div className="flex items-center"><Users className="w-5 h-5 mr-2 text-blue-500" /><p><span className="font-semibold">Kuota: </span>{post.kuota || 'N/A'}</p></div></div>
                      {post.link && <a href={post.link} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center text-green-600 hover:text-green-800 font-semibold text-sm">View on Kemenkes LMS<ExternalLink className="w-4 h-4 ml-1" /></a>}
                     
                     {userData.isAdmin ? (
@@ -236,7 +235,7 @@
                             {registrations.length === 0 && <p className="text-sm text-gray-500">No registrations yet.</p>}
                             <ul className="space-y-2 max-h-48 overflow-y-auto">{registrations.map(reg => (
                                 <li key={reg.id} className="flex justify-between items-center bg-white p-2 rounded shadow-sm">
-                                    <div><p className="font-semibold">{reg.fullName}</p><p className="text-sm text-gray-500">NIK: {reg.nik}</p></div>
+                                    <div><p className="font-semibold">{reg.fullName} ({reg.profesi})</p><p className="text-sm text-gray-500">NIK: {reg.nik}</p></div>
                                     {reg.status === 'pending' ? <button onClick={() => handleApprove(reg.id)} className="bg-green-500 text-white px-3 py-1 text-sm rounded-full hover:bg-green-600">Approve</button> : <span className="text-sm font-bold text-green-600 flex items-center"><CheckCircle className="w-4 h-4 mr-1"/>Approved</span>}
                                 </li>
                             ))}</ul>
@@ -258,14 +257,15 @@
         function CMERegistrationModal({ post, user, userData, onClose }) {
             const [fullName, setFullName] = useState(userData.displayName || '');
             const [nik, setNik] = useState('');
+            const [profesi, setProfesi] = useState(userData.profession || '');
             const [isSubmitting, setIsSubmitting] = useState(false);
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
-                if (!fullName.trim() || !nik.trim()) return;
+                if (!fullName.trim() || !nik.trim() || !profesi.trim()) return;
                 setIsSubmitting(true);
                 const regDocRef = doc(db, "posts", post.id, "registrations", user.uid);
-                await setDoc(regDocRef, { status: 'pending', fullName, nik, registeredAt: serverTimestamp() });
+                await setDoc(regDocRef, { status: 'pending', fullName, nik, profesi, registeredAt: serverTimestamp() });
                 setIsSubmitting(false);
                 onClose();
             };
@@ -280,6 +280,7 @@
                                 <div className="space-y-4">
                                     <div><label className="block text-sm font-medium">Full Name</label><input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full p-2 rounded-lg border" required /></div>
                                     <div><label className="block text-sm font-medium">NIK (National ID)</label><input type="text" value={nik} onChange={e => setNik(e.target.value)} className="w-full p-2 rounded-lg border" required /></div>
+                                    <div><label className="block text-sm font-medium">Profesi</label><select value={profesi} onChange={e => setProfesi(e.target.value)} className="w-full p-2 rounded-lg border bg-white">{PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
                                 </div>
                             </div>
                             <div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3"><button type="button" onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg">Cancel</button><button type="submit" disabled={isSubmitting} className="bg-red-600 text-white px-4 py-2 rounded-lg disabled:bg-red-300">Submit Registration</button></div>
@@ -296,6 +297,9 @@
             const [content, setContent] = useState('');
             const [skpPoints, setSkpPoints] = useState(0);
             const [targetProfessions, setTargetProfessions] = useState([]);
+            const [eventDate, setEventDate] = useState('');
+            const [registrationDeadline, setRegistrationDeadline] = useState('');
+            const [kuota, setKuota] = useState(0);
             const [isSubmitting, setIsSubmitting] = useState(false);
             const availablePostTypes = Object.keys(POST_TYPES).filter(key => !POST_TYPES[key].adminOnly || userData.isAdmin);
             const handleProfessionChange = (e) => { const options = e.target.options; const value = []; for (let i = 0, l = options.length; i < l; i++) { if (options[i].selected) { value.push(options[i].value); } } setTargetProfessions(value); };
@@ -303,7 +307,7 @@
                 if (!title.trim()) return;
                 setIsSubmitting(true);
                 const postData = { type, title, link, content, authorId: user.uid, authorName: userData.displayName, authorProfession: userData.profession, createdAt: serverTimestamp(), authorIsAdmin: userData.isAdmin };
-                if (type === "CME_EVENT") { postData.skpPoints = Number(skpPoints); postData.targetProfessions = targetProfessions; }
+                if (type === "CME_EVENT") { postData.skpPoints = Number(skpPoints); postData.targetProfessions = targetProfessions; postData.eventDate = eventDate; postData.registrationDeadline = registrationDeadline; postData.kuota = Number(kuota); }
                 try {
                     const postRef = await addDoc(collection(db, "posts"), postData);
                     const points = POST_TYPES[type]?.points || 0;
@@ -319,7 +323,7 @@
                 setIsSubmitting(false);
                 onClose();
             };
-            return (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-xl shadow-2xl w-full max-w-lg"><div className="p-6"><h3 className="text-xl font-bold mb-4">Share with the Academy</h3><div className="space-y-4"><div><label className="block text-sm font-medium">Type</label><select value={type} onChange={e => setType(e.target.value)} className="w-full bg-gray-50 p-2 rounded-lg border">{availablePostTypes.map(key => (<option key={key} value={key}>{POST_TYPES[key].label}</option>))}</select></div><div><label className="block text-sm font-medium">Title</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded-lg border" /></div>{type === "CME_EVENT" && <><div><label className="block text-sm font-medium">SKP Points</label><input type="number" value={skpPoints} onChange={e => setSkpPoints(e.target.value)} className="w-full p-2 rounded-lg border" /></div><div><label className="block text-sm font-medium">Target Peserta</label><select multiple={true} value={targetProfessions} onChange={handleProfessionChange} className="w-full h-32 bg-gray-50 p-2 rounded-lg border">{PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div></>}<div><label className="block text-sm font-medium">Description</label><textarea value={content} onChange={e => setContent(e.target.value)} rows="4" className="w-full p-2 rounded-lg border"></textarea></div><div><label className="block text-sm font-medium">Link</label><input type="url" value={link} onChange={e => setLink(e.target.value)} className="w-full p-2 rounded-lg border" /></div></div></div><div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3"><button onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg">Cancel</button><button onClick={handleSubmit} disabled={isSubmitting} className="bg-red-600 text-white px-4 py-2 rounded-lg disabled:bg-red-300">Share</button></div></div></div>);
+            return (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-xl shadow-2xl w-full max-w-lg"><div className="p-6"><h3 className="text-xl font-bold mb-4">Share with the Academy</h3><div className="space-y-4"><div><label className="block text-sm font-medium">Type</label><select value={type} onChange={e => setType(e.target.value)} className="w-full bg-gray-50 p-2 rounded-lg border">{availablePostTypes.map(key => (<option key={key} value={key}>{POST_TYPES[key].label}</option>))}</select></div><div><label className="block text-sm font-medium">Title</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded-lg border" /></div>{type === "CME_EVENT" && <><div><label className="block text-sm font-medium">Tanggal Pelaksanaan</label><input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} className="w-full p-2 rounded-lg border"/></div><div><label className="block text-sm font-medium">Pendaftaran Ditutup Tanggal</label><input type="date" value={registrationDeadline} onChange={e => setRegistrationDeadline(e.target.value)} className="w-full p-2 rounded-lg border"/></div><div><label className="block text-sm font-medium">Kuota Peserta</label><input type="number" value={kuota} onChange={e => setKuota(e.target.value)} className="w-full p-2 rounded-lg border"/></div><div><label className="block text-sm font-medium">SKP Points</label><input type="number" value={skpPoints} onChange={e => setSkpPoints(e.target.value)} className="w-full p-2 rounded-lg border" /></div><div><label className="block text-sm font-medium">Target Peserta</label><select multiple={true} value={targetProfessions} onChange={handleProfessionChange} className="w-full h-32 bg-gray-50 p-2 rounded-lg border">{PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div></>}<div><label className="block text-sm font-medium">Description</label><textarea value={content} onChange={e => setContent(e.target.value)} rows="4" className="w-full p-2 rounded-lg border"></textarea></div><div><label className="block text-sm font-medium">Link</label><input type="url" value={link} onChange={e => setLink(e.target.value)} className="w-full p-2 rounded-lg border" /></div></div></div><div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3"><button onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg">Cancel</button><button onClick={handleSubmit} disabled={isSubmitting} className="bg-red-600 text-white px-4 py-2 rounded-lg disabled:bg-red-300">Share</button></div></div></div>);
         }
         function Discussions({ user, userData }) {
             const [topics, setTopics] = useState([]);
